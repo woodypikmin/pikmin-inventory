@@ -51,10 +51,11 @@
             <label>庫存類型<select id="analysisType"><option value="petals">🌸 花瓣</option><option value="nectar">🍯 精華</option></select></label>
             <label>低庫存門檻（小於）<input id="analysisThreshold" type="number" min="0" max="9999999" step="1" value="100"></label>
             <label>比較花朵<select id="analysisFlower"></select></label>
-          </div><p class="analytics-hint">只計算已登記的數量，<b>0 會算入統計</b>，「—」不算作 0；相同數量會並列。門檻及篩選只儲存在你的瀏覽器。</p></div>
+          </div><p class="analytics-hint">低庫存與排名只計算已登記數量，<b>0 會算入統計</b>；「—」會另外列在尚未登記清單；相同數量會並列。門檻及篩選只儲存在你的瀏覽器。</p></div>
           <div class="analytics-grid">
             <section class="panel analytics-card"><h2>⏱ 每位玩家最後更新時間</h2><div id="playerUpdatedList"></div></section>
             <section class="panel analytics-card"><h2>📉 低庫存清單 <span id="lowCount" class="count-pill"></span></h2><div id="lowStockList"></div></section>
+            <section class="panel analytics-card"><h2>📝 尚未登記 <span id="missingCount" class="count-pill"></span></h2><p class="analytics-context">依目前庫存總覽出現的花種，列出這位玩家標示「—」的花瓣／精華；不包含特殊精華的花瓣。</p><div id="missingStockList"></div></section>
             <section class="panel analytics-card"><h2>🏅 該玩家最多／最少</h2><div id="playerExtremes"></div></section>
             <section class="panel analytics-card"><h2>👥 同種花的玩家比較</h2><div id="flowerCompare"></div></section>
           </div>
