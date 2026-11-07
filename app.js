@@ -3,13 +3,16 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const KEY='flower-station-shared-demo-v1', CONFIG='flower-station-shared-config'; const SESSION='flower-station-shared-session'; const DEFAULT_URL='https://uvdijjktingslobyxodu.supabase.co';
 const defaults=['玩家1','玩家2','玩家3','玩家4'];
-const common={'精華':'普白','白色精華':'普白','黃色精華':'普黃','紅色精華':'普紅','藍色精華':'普藍','白精華':'普白','黃精華':'普黃','紅精華':'普紅','藍精華':'普藍'};
-const flowerSeeds=['天竺葵','鼠尾草','銀蓮花','風鈴草','九重葛','海芋','山茶花','美人蕉','油菜花','康乃馨','嘉德麗雅蘭','鐵線蓮','彼岸花','鈴蘭','大波斯菊','兔耳花','大理花','石竹','曇花','風鈴草','小蒼蘭','龍膽','玫瑰','鬱金香','風信子','百合','向日葵','蘭花','水仙','雛菊','繡球花','櫻花','梅花','牡丹','薰衣草','仙客來','丁香','波斯菊','三色菫','睡蓮','洋桔梗','百日草','秋海棠','茶花'];
-let state={players:[...defaults],items:{},history:[]}, sb=null, user=null, token=localStorage.getItem(SESSION)||'', page='dashboard', activeTab='text', preview=[], fileSelection=[], busy=false, editContext=null, toastTimer=null;
+const PUBLIC_CACHE='flower-station-last-public-v12';
+const common={'精華':'普白','白色精華':'普白','黃色精華':'普黃','紅色精華':'普紅','藍色精華':'普藍','白精華':'普白','黃精華':'普黃','紅精華':'普紅','藍精華':'普藍','愛心精華':'特殊精華','愛心型精華':'特殊精華','心型精華':'特殊精華','心形精華':'特殊精華','特殊花瓣精華':'特殊精華','愛心':'特殊精華','紅心精華':'特殊精華','特殊愛心精華':'特殊精華','（愛心）精華':'特殊精華','(愛心)精華':'特殊精華','特殊':'特殊精華','藍色粉蝶花':'藍色粉蝶花'};
+const FLOWER_CATALOG={"銀蓮花":"白黃紅藍","九重葛":"白黃紅藍","海芋":"白黃紅藍","山茶花":"白黃紅藍","油菜花":"白黃藍","康乃馨":"白黃紅藍","嘉德麗雅蘭":"白黃紅藍","雞冠花":"白黃紅藍","櫻花":"白","菊花":"白黃紅藍","鐵線蓮":"白黃紅藍","彼岸花":"白黃紅","鈴蘭":"白紅","大波斯菊":"白黃紅","兔耳花":"白紅藍","大理花":"白黃紅藍","石竹":"白紅藍","小蒼蘭":"白黃紅藍","龍膽":"白紅藍","聖誕玫瑰":"白黃紅藍","扶桑花":"白黃紅藍","風信子":"白黃紅藍","繡球花":"白紅藍","鳶尾花":"白黃紅藍","百合":"白黃紅","萬壽菊":"白黃紅","牽牛花":"白黃紅藍","蝴蝶蘭":"白黃紅藍","水仙":"白黃","粉蝶花":"藍","睡蓮":"白黃紅藍","三色菫":"白黃紅藍","牡丹":"白黃紅藍","矮牽牛":"白黃紅藍","梅花":"白黃紅","雞蛋花":"白黃紅","聖誕紅":"白黃紅藍","櫻草花":"白黃紅藍","玫瑰":"白黃紅藍","週年紀念玫瑰":"白黃紅藍","鼠尾草":"白黃紅藍","金魚草":"白黃紅藍","雪花蓮":"白黃紅","天堂鳥":"白黃紅","向日葵":"黃","豌豆花":"白黃紅藍","鬱金香":"白黃紅藍","鸚鵡鬱金香":"白黃紅藍","勿忘草":"白黃紅藍","曇花":"白黃紅藍","美人蕉":"白黃紅","洋桔梗":"白黃紅藍","薊花":"白黃紅藍","天竺葵":"白黃紅藍","風鈴草":"白紅藍"};
+const flowerSeeds=Object.keys(FLOWER_CATALOG);
+const VALID_FLOWERS=new Set(["普白","普黃","普紅","普藍","特殊精華","白色銀蓮花","黃色銀蓮花","紅色銀蓮花","藍色銀蓮花","白色九重葛","黃色九重葛","紅色九重葛","藍色九重葛","白色海芋","黃色海芋","紅色海芋","藍色海芋","白色山茶花","黃色山茶花","紅色山茶花","藍色山茶花","白色油菜花","黃色油菜花","藍色油菜花","白色康乃馨","黃色康乃馨","紅色康乃馨","藍色康乃馨","白色嘉德麗雅蘭","黃色嘉德麗雅蘭","紅色嘉德麗雅蘭","藍色嘉德麗雅蘭","白色雞冠花","黃色雞冠花","紅色雞冠花","藍色雞冠花","櫻花","白色菊花","黃色菊花","紅色菊花","藍色菊花","白色鐵線蓮","黃色鐵線蓮","紅色鐵線蓮","藍色鐵線蓮","白色彼岸花","黃色彼岸花","紅色彼岸花","白色鈴蘭","紅色鈴蘭","白色大波斯菊","黃色大波斯菊","紅色大波斯菊","白色兔耳花","紅色兔耳花","藍色兔耳花","白色大理花","黃色大理花","紅色大理花","藍色大理花","白色石竹","紅色石竹","藍色石竹","白色小蒼蘭","黃色小蒼蘭","紅色小蒼蘭","藍色小蒼蘭","白色龍膽","紅色龍膽","藍色龍膽","白色聖誕玫瑰","黃色聖誕玫瑰","紅色聖誕玫瑰","藍色聖誕玫瑰","白色扶桑花","黃色扶桑花","紅色扶桑花","藍色扶桑花","白色風信子","黃色風信子","紅色風信子","藍色風信子","白色繡球花","紅色繡球花","藍色繡球花","白色鳶尾花","黃色鳶尾花","紅色鳶尾花","藍色鳶尾花","白色百合","黃色百合","紅色百合","白色萬壽菊","黃色萬壽菊","紅色萬壽菊","白色牽牛花","黃色牽牛花","紅色牽牛花","藍色牽牛花","白色蝴蝶蘭","黃色蝴蝶蘭","紅色蝴蝶蘭","藍色蝴蝶蘭","白色水仙","黃色水仙","藍色粉蝶花","白色睡蓮","黃色睡蓮","紅色睡蓮","藍色睡蓮","白色三色菫","黃色三色菫","紅色三色菫","藍色三色菫","白色牡丹","黃色牡丹","紅色牡丹","藍色牡丹","白色矮牽牛","黃色矮牽牛","紅色矮牽牛","藍色矮牽牛","白色梅花","黃色梅花","紅色梅花","白色雞蛋花","黃色雞蛋花","紅色雞蛋花","白色聖誕紅","黃色聖誕紅","紅色聖誕紅","藍色聖誕紅","白色櫻草花","黃色櫻草花","紅色櫻草花","藍色櫻草花","白色玫瑰","黃色玫瑰","紅色玫瑰","藍色玫瑰","白色週年紀念玫瑰","黃色週年紀念玫瑰","紅色週年紀念玫瑰","藍色週年紀念玫瑰","白色鼠尾草","黃色鼠尾草","紅色鼠尾草","藍色鼠尾草","白色金魚草","黃色金魚草","紅色金魚草","藍色金魚草","白色雪花蓮","黃色雪花蓮","紅色雪花蓮","白色天堂鳥","黃色天堂鳥","紅色天堂鳥","黃色向日葵","白色豌豆花","黃色豌豆花","紅色豌豆花","藍色豌豆花","白色鬱金香","黃色鬱金香","紅色鬱金香","藍色鬱金香","白色鸚鵡鬱金香","黃色鸚鵡鬱金香","紅色鸚鵡鬱金香","藍色鸚鵡鬱金香","白色勿忘草","黃色勿忘草","紅色勿忘草","藍色勿忘草","白色曇花","黃色曇花","紅色曇花","藍色曇花","白色美人蕉","黃色美人蕉","紅色美人蕉","白色洋桔梗","黃色洋桔梗","紅色洋桔梗","藍色洋桔梗","白色薊花","黃色薊花","紅色薊花","藍色薊花","白色天竺葵","黃色天竺葵","紅色天竺葵","藍色天竺葵","白色風鈴草","紅色風鈴草","藍色風鈴草"]);
+let state={players:[...defaults],items:{},history:[]}, sb=null, user=null, token=localStorage.getItem(SESSION)||'', page='dashboard', activeTab='text', preview=[], fileSelection=[], busy=false, editContext=null, toastTimer=null, latestSync=null, syncError='', syncInFlight=null;
 function toast(msg,error=false){const el=$('#toast');el.textContent=msg;el.className='toast show'+(error?' error':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.className='toast',4400)}
 function nfmt(n){return n===null||n===undefined?'—':Number(n).toLocaleString('en-US')}
 function parseNum(v){if(v===null||v===undefined||String(v).trim()==='')return null;let s=String(v).replace(/[,，\s]/g,'');if(!/^\d+$/.test(s)||Number(s)>9999999)return undefined;return Number(s)}
-function canonical(raw){let s=String(raw||'').replace(/[\s\u200b\u3000]/g,'').replace(/[：:]/g,'').trim();if(!s)return '';if(common[s])return common[s];s=s.replace(/^白(?=[^色])/,'白色').replace(/^黃(?=[^色])/,'黃色').replace(/^紅(?=[^色])/,'紅色').replace(/^藍(?=[^色])/,'藍色');if(common[s])return common[s];if(/^([白黃紅藍])色精華$/.test(s))return common[s];return s}
+function canonical(raw){let s=String(raw||'').replace(/[\s\u200b\u3000]/g,'').replace(/[：:]/g,'').trim();if(!s)return '';if(common[s])return common[s];s=s.replace(/水仙花/g,'水仙').replace(/三色堇/g,'三色菫').replace(/墨花/g,'曇花');if(s==='白色櫻花')return '櫻花';if(s==='粉蝶花')return '藍色粉蝶花';if(s==='向日葵')return '黃色向日葵';if(/^特殊精華$/.test(s))return '特殊精華';s=s.replace(/^白(?=[^色])/,'白色').replace(/^黃(?=[^色])/,'黃色').replace(/^紅(?=[^色])/,'紅色').replace(/^藍(?=[^色])/,'藍色');if(common[s])return common[s];if(/^([白黃紅藍])色精華$/.test(s))return common[s];return s}
 const COLOR_RANK={'白':0,'黃':1,'紅':2,'藍':3};
 function flowerFamily(name){if(name.startsWith('普'))return '!!普通精華';return name.replace(/^[白黃紅藍]色/,'')}
 function compareFlowers(a,b,mode='flower'){const ca=COLOR_RANK[colorOf(a)]??9,cb=COLOR_RANK[colorOf(b)]??9;if(mode==='color')return ca-cb||flowerFamily(a).localeCompare(flowerFamily(b),'zh-Hant')||a.localeCompare(b,'zh-Hant');if(mode==='name')return a.localeCompare(b,'zh-Hant');return flowerFamily(a).localeCompare(flowerFamily(b),'zh-Hant')||ca-cb||a.localeCompare(b,'zh-Hant')}
@@ -27,9 +30,10 @@ function requireEdit(){if(canEdit())return true;toast('目前是公開唯讀模�
 function setStatus(){
  const viewing=!!sb, editing=canEdit();
  $('#statusDot').classList.toggle('connected',viewing);
- $('#modeLabel').textContent=editing?'已登入（可編輯）':viewing?'公開瀏覽（唯讀）':'尚未連線';
+ $('#modeLabel').textContent=syncError?'雲端暫時無法更新':editing?'已登入（可編輯）':latestSync?'公開瀏覽（唯讀）':viewing?'正在連線':'尚未連線';
  $('#cloudDescription').textContent=editing?'已登入：可以修改所有玩家的庫存。下次開啟會自動恢復登入（最多七天）。':viewing?'不用密碼也能看所有人的最新庫存；需要修改時才輸入共用密碼。':'雲端連線尚未成功，請確認設定與 flower-gateway。';
- $('#syncStamp').textContent=editing?'✏️ 可編輯':viewing?'☁ 公開唯讀':'尚未連線';
+ $('#syncStamp').textContent=syncError?'⚠️ 雲端同步失敗':latestSync?'☁ 已同步 '+timeText(latestSync):viewing?'☁ 連線中…':'尚未連線';
+ const notice=$('#syncNotice');if(notice){notice.hidden=!syncError;notice.textContent=syncError?'⚠️ '+syncError+'（畫面可能是上次成功載入的資料，請稍後按「重新讀取」）':'';}
  $('#authBtn').textContent=editing?'登出／帳號設定':'登入以編輯';
  const editControls=['quickImport','savePlayers','addPlayer','parseText','parseSheet','savePreview','addPreviewRow','csvFile'];
  for(const id of editControls){const el=$('#'+id);if(el)el.disabled=!editing}
@@ -56,7 +60,7 @@ function parseSheet(raw){const warnings=[],rows=[];const lines=raw.replace(/\r/g
 function dedupe(rows){const map=new Map(),conflicts=[];for(const r of rows){if(!r.flower)continue;r.flower=canonical(r.flower);const prev=map.get(r.flower);if(prev){let different=(r.petals!==null&&prev.petals!==null&&r.petals!==prev.petals)||(r.nectar!==null&&prev.nectar!==null&&r.nectar!==prev.nectar);if(different)conflicts.push(`「${r.flower}」出現不同數字，暫用後一筆（${r.source}），請核對。`);map.set(r.flower,{...prev,...r,petals:r.petals??prev.petals,nectar:r.nectar??prev.nectar,source:`重複｜${r.source}`})}else map.set(r.flower,{...r})}return{rows:[...map.values()],warnings:conflicts}}
 function setPreview(result){let merged=dedupe(result.rows);preview=merged.rows;$('#previewWarnings').replaceChildren();[...result.warnings,...merged.warnings].forEach(msg=>{const div=document.createElement('div');div.textContent='⚠ '+msg;$('#previewWarnings').append(div)});$('#previewPanel').hidden=false;renderPreview();$('#previewPanel').scrollIntoView({behavior:'smooth',block:'start'})}
 function renderPreview(){const body=$('#previewBody');body.replaceChildren();preview.forEach((r,index)=>{const tr=document.createElement('tr');for(const [key,cls] of [['flower','name-input'],['petals',''],['nectar','']]){const td=document.createElement('td'),input=document.createElement('input');input.className=cls;input.setAttribute('aria-label',key==='flower'?'花朵名稱':key==='petals'?'花瓣':'精華');input.value=r[key]??'';if(key!=='flower')input.inputMode='numeric';input.addEventListener('input',()=>{r[key]=key==='flower'?input.value:input.value.trim()===''?null:input.value});td.append(input);tr.append(td)}const td=document.createElement('td');td.className='muted';td.textContent=r.source||'手動新增';tr.append(td);const last=document.createElement('td'),del=document.createElement('button');del.className='remove-row';del.textContent='×';del.title='移除此列';del.addEventListener('click',()=>{preview.splice(index,1);renderPreview()});last.append(del);tr.append(last);body.append(tr)});$('#previewStats').textContent=`共 ${preview.length} 筆`}
-async function commitPreview(){if(!requireEdit())return;if(busy)return;const rows=preview.map(r=>({flower:canonical(r.flower),petals:parseNum(r.petals),nectar:parseNum(r.nectar)}));if(!rows.length){toast('沒有資料可以儲存',true);return}if(rows.some(r=>!r.flower||r.flower.includes('待確認花名')||r.petals===undefined||r.nectar===undefined||r.petals===null&&r.nectar===null)){toast('有空白花名或錯誤數量，請檢查後再存檔',true);return}const duplicates=dedupe(rows);if(duplicates.warnings.length&&!confirm(duplicates.warnings.join('\n')+'\n仍要繼續儲存？'))return;busy=true;$('#savePreview').disabled=true;try{await batchSave(duplicates.rows,selectedImportPlayer());toast(`成功儲存 ${duplicates.rows.length} 種花朵 🌸`);$('#previewPanel').hidden=true;nav('dashboard')}catch(e){toast('儲存失敗：'+e.message,true)}finally{busy=false;$('#savePreview').disabled=false}}
+async function commitPreview(){if(!requireEdit())return;if(busy)return;const rows=preview.map(r=>({flower:canonical(r.flower),petals:parseNum(r.petals),nectar:parseNum(r.nectar)}));if(!rows.length){toast('沒有資料可以儲存',true);return}if(rows.some(r=>!r.flower||!VALID_FLOWERS.has(r.flower)||r.flower.includes('待確認花名')||r.petals===undefined||r.nectar===undefined||r.petals===null&&r.nectar===null)){toast('存在不合法花名／顏色或錯誤數量，請先依正式清單修正',true);return}const duplicates=dedupe(rows);if(duplicates.warnings.length&&!confirm(duplicates.warnings.join('\n')+'\n仍要繼續儲存？'))return;busy=true;$('#savePreview').disabled=true;try{await batchSave(duplicates.rows,selectedImportPlayer());toast(`成功儲存 ${duplicates.rows.length} 種花朵 🌸`);$('#previewPanel').hidden=true;nav('dashboard')}catch(e){toast('儲存失敗：'+e.message,true)}finally{busy=false;$('#savePreview').disabled=false}}
 function readImage(file){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=()=>{URL.revokeObjectURL(url);reject(Error('無法讀取圖片'))};img.src=url})}
 /* AI Vision: each image is sent only to authenticated Supabase Edge Function. */
 function fileAsDataUrl(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('無法開啟圖片'));reader.readAsDataURL(file)})}
@@ -105,11 +109,12 @@ async function scanScreenshots(){
  if(fileSelection.length>3){toast('為控制費用與準確度，每批最多 3 張',true);return}
  const localAI = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
  if(!localAI && (!sb||!token)){toast('請先到設定頁輸入共用密碼並登入',true);nav('settings');return}
- if(!confirm(`即將透過 OpenAI API 辨識 ${fileSelection.length} 張截圖。新版會附上原圖與局部放大圖進行辨識，必要時會再次核對數字，因此 API 費用可能比舊版高。要繼續嗎？`))return;
+ const accuracy=$('#scanQuality').value==='accurate';
+ if(!confirm(`即將辨識 ${fileSelection.length} 張截圖。${accuracy?'精細模式：原圖＋兩張裁切圖，必要時額外呼叫模型。':'省額模式：每張只傳原圖、只呼叫一次 AI；不確定的格子請自行核對。'} 將產生 OpenAI API 費用。是否繼續？`))return;
  busy=true;$('#scanImages').disabled=true;
  try{
   $('#ocrProgress').textContent='正在準備圖片…';
-  const images=[],readingCrops=[];for(let i=0;i<fileSelection.length;i++){images.push(await prepareImage(fileSelection[i]));readingCrops.push(await makeReadingCrops(fileSelection[i]));}
+  const images=[],readingCrops=[];for(let i=0;i<fileSelection.length;i++){images.push(await prepareImage(fileSelection[i]));readingCrops.push(accuracy?await makeReadingCrops(fileSelection[i]):null);}
   // Each screenshot is scanned separately. Three screenshots in a single model
   // response can cause tile alignment mistakes and missed / mixed numbers.
   const allRows=[], allWarnings=[];
@@ -124,7 +129,7 @@ async function scanScreenshots(){
      part.rows=(part.items||[]).map(it=>({flower:it.name,petals:it.petals,nectar:it.nectar,image_index:1,name_status:it.name_status,original_name:it.original_name,suggestions:it.suggestions}));
      part.warnings=[];
     }else{
-     part=await gateway('scan',{images:[images[i]],reading_crops:readingCrops[i]});
+     part=await gateway('scan',{images:[images[i]],mode:accuracy?'accurate':'economy',...(accuracy?{reading_crops:readingCrops[i]}:{})});
     }
     if(part?.error)throw Error(part.error);
     allRows.push(...(part.rows||[]).map(row=>({...row,image_index:i+1})));
@@ -142,12 +147,13 @@ async function scanScreenshots(){
    const which=Number(item.image_index);
    const source=`AI 截圖 ${Number.isInteger(which)&&which>=1&&which<=fileSelection.length?which:'?'}：${fileSelection[which-1]?.name||'圖片'}`;
    if(!flower){warnings.push(`${source}：有一筆花名不確定，未自動匯入。`);continue}
+   if(!VALID_FLOWERS.has(flower))warnings.push(`${source}：「${flower}」不在正式花種／顏色清單，請修改為正確名稱再儲存。`);
    if(item.name_status==='review')warnings.push(`${source}：「${flower}」不在確認花種清單，請先人工修改花名。${(item.suggestions||[]).length?'可能是：'+item.suggestions.join('、'):''}`);
    if(item.name_status==='corrected')warnings.push(`${source}：花名已自動修正「${item.original_name}」→「${flower}」，請核對。`);
    if(petals===undefined||nectar===undefined){warnings.push(`${source}：${flower} 數量格式不正確，已略過。`);continue}
    if(petals===null&&nectar===null){warnings.push(`${source}：${flower} 兩個數量均無法辨識，已略過。`);continue}
    if(seen.has(flower)){const older=seen.get(flower);if(older.petals!==petals||older.nectar!==nectar)warnings.push(`${flower} 在多張截圖的數值不同，請在預覽確認；不會加總。`);else warnings.push(`${flower} 在多張截圖重複出現，已去重。`);continue}
-   const row={flower,petals,nectar,source};seen.set(flower,row);rows.push(row);
+   const row={flower,petals:flower==='特殊精華'?null:petals,nectar,source};seen.set(flower,row);rows.push(row);
    if(petals===null||nectar===null)warnings.push(`${source}：${flower} 有數值看不清楚，請補填。`);
   }
   warnings.push(...(data.warnings||[]).map(String));
@@ -210,36 +216,63 @@ function parseCsv(csv){let rows=[],record=[],field='',quoted=false;for(let i=0;i
 async function importCsv(file){if(!requireEdit())return;const content=(await file.text()).replace(/^\ufeff/,'');let rows=parseCsv(content).slice(1);if(!rows.length){toast('CSV 檔案沒有資料',true);return}const groups=new Map();for(const cells of rows){const p=Number(cells[0])-1,flower=canonical(cells[2]);if(!Number.isInteger(p)||p<0||p>=state.players.length||!flower)continue;const petals=parseNum(cells[3]),nectar=parseNum(cells[4]);if(petals===undefined||nectar===undefined)continue;if(!groups.has(p))groups.set(p,[]);groups.get(p).push({flower,petals,nectar})}if(!groups.size){toast('CSV 格式不符合備份格式',true);return}if(!confirm(`將從 CSV 匯入 ${[...groups.values()].reduce((s,v)=>s+v.length,0)} 筆資料（共 ${groups.size} 位玩家）。會覆蓋有提供數字的欄位，確定嗎？`))return;try{for(const [p,items] of groups)await batchSave(items,p);toast('CSV 已匯入');nav('dashboard')}catch(e){toast('匯入失敗：'+e.message,true)}}
 function getConfig(){try{const saved=JSON.parse(localStorage.getItem(CONFIG))||{};return {url:saved.url||DEFAULT_URL,key:saved.key||''}}catch{return {url:DEFAULT_URL,key:''}}}
 function initializeClient(){const cfg=getConfig();sb=cfg.url?cfg:null;setStatus()}
-async function gateway(action,body={}){const cfg=getConfig();if(!cfg.url)throw Error('缺少 Supabase 網址');const url=cfg.url.replace(/\/$/,'')+'/functions/v1/flower-gateway';const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...(cfg.key?{'apikey':cfg.key}:{}),...(token?{'Authorization':'Bearer '+token}:{})},body:JSON.stringify({action,...body})});let data;try{data=await response.json()}catch{throw Error(`伺服器回傳格式錯誤 (${response.status})，請確認已部署 flower-gateway 並關閉 Verify JWT`)}if(!response.ok){if(response.status===401&&action!=='login'){token='';localStorage.removeItem(SESSION);setStatus()}throw Error(data?.error||`連線錯誤 ${response.status}`)}return data}
+async function gateway(action,body={}){const cfg=getConfig();if(!cfg.url)throw Error('缺少 Supabase 網址');const url=cfg.url.replace(/\/$/,'')+'/functions/v1/flower-gateway';const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...(cfg.key?{'apikey':cfg.key}:{}),...(token?{'Authorization':'Bearer '+token}:{})},cache:'no-store',body:JSON.stringify({action,...body})});let data;try{data=await response.json()}catch{throw Error(`伺服器回傳格式錯誤 (${response.status})，請確認已部署 flower-gateway 並關閉 Verify JWT`)}if(!response.ok){if(response.status===401&&action!=='login'){token='';localStorage.removeItem(SESSION);setStatus()}throw Error(data?.error||`連線錯誤 ${response.status}`)}return data}
 function assignSnapshot(result,publicMode=false){
- state.players=(result.players||[]).map(p=>p.name);
- state.items={};for(const x of result.inventory||[])state.items[`${x.player_id}::${x.flower}`]=x;
+ if(!Array.isArray(result.players)||!Array.isArray(result.inventory))throw Error('雲端回傳格式不正確');
+ state.players=result.players.map(p=>p.name);
+ state.items={};for(const x of result.inventory)state.items[`${x.player_id}::${x.flower}`]=x;
  state.history=publicMode?[]:(result.history||[]);
+ latestSync=new Date().toISOString();syncError='';
+ try{localStorage.setItem(PUBLIC_CACHE,JSON.stringify({url:getConfig().url,players:result.players,inventory:result.inventory,savedAt:latestSync}))}catch{}
  renderPlayerSelects();renderTable();if(page==='analytics')renderAnalytics();if(page==='history')renderHistory();if(page==='settings')renderSettings();
  setStatus();
 }
+function showCachedSnapshot(){
+ try{const cached=JSON.parse(localStorage.getItem(PUBLIC_CACHE)||'null');if(cached?.url!==getConfig().url||!Array.isArray(cached?.inventory)||!Array.isArray(cached?.players))return;
+ state.players=cached.players.map(p=>p.name);state.items={};for(const x of cached.inventory)state.items[`${x.player_id}::${x.flower}`]=x;
+ latestSync=cached.savedAt||null;renderPlayerSelects();renderTable();if(page==='analytics')renderAnalytics();setStatus();
+ }catch(e){console.warn('cached snapshot unavailable',e)}
+}
 async function fetchPublic(){if(!sb)return;const result=await gateway('public_bootstrap');assignSnapshot(result,true)}
 async function fetchCloud(){if(!sb||!token)return;const result=await gateway('bootstrap');assignSnapshot(result,false)}
+async function reloadCloud(silent=false){
+ if(!sb)return;
+ if(syncInFlight)return syncInFlight;
+ syncInFlight=(async()=>{
+  try{if(token)await fetchCloud();else await fetchPublic();return true}
+  catch(e){
+   // Only a real 401 should cause the session to be removed (handled in gateway).
+   if(!token){try{await fetchPublic();return true}catch(publicError){e=publicError}}
+   syncError='無法讀取雲端：'+(e?.message||'請確認網路及 Supabase 狀態');setStatus();
+   if(!silent)toast(syncError,true);return false;
+  }
+ })();
+ try{return await syncInFlight}finally{syncInFlight=null}
+}
 async function connect(){
  initializeClient();if(!sb)return;
- if(token){try{await fetchCloud();return}catch(e){console.warn('登入憑證已過期，切換唯讀',e);token='';localStorage.removeItem(SESSION)}}
- try{await fetchPublic()}catch(e){toast('公開資料讀取失敗：'+e.message,true)}setStatus();
+ showCachedSnapshot();await reloadCloud(false);
 }
 async function signIn(){
  initializeClient();if(!sb){toast('尚未設定雲端網址',true);return}
  const password=$('#password').value;if(!password){toast('請輸入共用密碼',true);return}
  try{const result=await gateway('login',{password});token=result.token;localStorage.setItem(SESSION,token);$('#password').value='';await fetchCloud();setStatus();toast('登入成功！下次開啟會自動登入')}catch(e){token='';localStorage.removeItem(SESSION);toast('登入失敗：'+e.message,true)}
 }
-async function signOut(){token='';localStorage.removeItem(SESSION);await fetchPublic();setStatus();toast('已登出，仍可公開查看資料')}
+async function signOut(){token='';localStorage.removeItem(SESSION);await reloadCloud();setStatus();toast('已登出，仍可公開查看資料')}
 async function setConfig(){
  const url=$('#sbUrl').value.trim(),key=$('#sbKey').value.trim();
  if(!/^https:\/\/[^/]+\.supabase\.co\/?$/.test(url)){toast('請輸入正確的 Supabase Project URL',true);return}
  if(/service_role|sb_secret_/i.test(key)){toast('不要使用 secret / service_role 金鑰',true);return}
- localStorage.setItem(CONFIG,JSON.stringify({url,key}));token='';localStorage.removeItem(SESSION);initializeClient();await fetchPublic();toast('設定已儲存，可直接公開查看庫存');
+ localStorage.setItem(CONFIG,JSON.stringify({url,key}));token='';localStorage.removeItem(SESSION);initializeClient();await reloadCloud();toast('設定已儲存；已嘗試讀取雲端庫存');
 }
 
 function setTab(next){activeTab=next;$$('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===next));$$('.tab-body').forEach(el=>el.classList.toggle('active',el.id===`tab-${next}`))}
 function bind(){ $$('.nav-item').forEach(el=>el.addEventListener('click',()=>nav(el.dataset.page)));$$('.tab').forEach(el=>el.addEventListener('click',()=>setTab(el.dataset.tab)));$('#quickImport').addEventListener('click',()=>nav('import'));$('#authBtn').addEventListener('click',()=>nav('settings'));$('#searchInput').addEventListener('input',renderTable);$('#colorFilter').addEventListener('change',renderTable);$('#sortMode').addEventListener('change',e=>{localStorage.setItem('flower-station-sort-mode',e.target.value);renderTable()});for(const id of ['analysisPlayer','analysisType','analysisThreshold','analysisFlower']){$('#'+id).addEventListener(id==='analysisThreshold'?'input':'change',renderAnalytics)}$('#playerFilter').addEventListener('change',renderTable);$('#parseText').addEventListener('click',()=>setPreview(parseText($('#textInput').value)));$('#parseSheet').addEventListener('click',()=>setPreview(parseSheet($('#sheetInput').value)));$('#imageInput').addEventListener('change',e=>{fileSelection=[...e.target.files];$('#imageFileList').textContent=fileSelection.length?`✅ 已選擇 ${fileSelection.length} 張：${fileSelection.map(f=>f.name).join('、')}${fileSelection.length>3?' ⚠️ 每次最多 3 張，請重新選擇。':''}${!canEdit()?' ｜請先按右上角「登入以編輯」':''}`:'';});$('#scanImages').addEventListener('click',scanScreenshots);$('#addPreviewRow').addEventListener('click',()=>{preview.push({flower:'',petals:null,nectar:null,source:'手動新增'});renderPreview()});$('#savePreview').addEventListener('click',commitPreview);$('#editForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='save')return;e.preventDefault();await saveEdit();$('#editDialog').close()});$('#savePlayers').addEventListener('click',savePlayerNames);$('#addPlayer').addEventListener('click',addPlayer);$('#saveCloud').addEventListener('click',setConfig);$('#disconnectCloud').addEventListener('click',async()=>{await signOut()});$('#signIn').addEventListener('click',signIn);$('#signOut').addEventListener('click',signOut);$('#exportCsv').addEventListener('click',exportCsv);$('#csvFile').addEventListener('change',async e=>{if(e.target.files[0])await importCsv(e.target.files[0]);e.target.value=''});$('#reloadHistory').addEventListener('click',async()=>{if(sb)try{if(token)await fetchCloud();else await fetchPublic()}catch(e){toast(e.message,true)}renderHistory()})}
-async function init(){const savedSort=localStorage.getItem('flower-station-sort-mode');if(['flower','color','name'].includes(savedSort))$('#sortMode').value=savedSort;bind();renderPlayerSelects();renderTable();renderHistory();renderSettings();await connect()}
+async function init(){const savedSort=localStorage.getItem('flower-station-sort-mode');if(['flower','color','name'].includes(savedSort))$('#sortMode').value=savedSort;bind();renderPlayerSelects();renderTable();renderHistory();renderSettings();await connect();
+ setInterval(()=>{if(!document.hidden&&sb&&!busy)reloadCloud(true)},45000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sb&&!busy)reloadCloud(true)});
+ window.addEventListener('online',()=>{if(sb)reloadCloud(false)});
+ $('#refreshCloud').addEventListener('click',()=>reloadCloud(false));
+}
 window.addEventListener('load',init);
 })();
