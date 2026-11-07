@@ -2,3 +2,6 @@
 
 /* Screenshot OCR alignment controls */
 .ocr-adjust{border:1px solid #e8c5d9;border-radius:16px;padding:16px;margin:14px 0;background:#fff9fc}.ocr-adjust p{font-size:14px;line-height:1.6}.ocr-adjust label{display:block;margin:12px 0;font-weight:600}.ocr-adjust input[type=range]{display:block;width:100%;accent-color:#ed5da1;margin:6px 0}.ocr-adjust output{float:right;color:#b62469}.ocr-adjust canvas{display:block;width:min(100%,330px);height:auto;margin:12px auto;border:1px solid #e0e0e0;border-radius:10px}.ocr-adjust small{display:block;color:#7b6474}
+
+/* Inventory labels: icons always accompanied by explicit meaning. */
+.inventory-legend{display:flex;align-items:center;flex-wrap:wrap;gap:9px 18px;padding:0 26px 14px;color:#4e6856;font-size:13px}.inventory-legend>span{display:inline-flex;align-items:center;gap:5px;background:#f0f7ef;border:1px solid #e0ebdf;border-radius:999px;padding:6px 11px}.inventory-legend small{font-size:11px;color:#819184}.pair-name{white-space:nowrap;font-size:11px;color:#596e5c}.num-pair .pair-pill{gap:5px}@media(max-width:780px){.inventory-legend{padding:0 13px 13px;gap:6px}.inventory-legend small{flex-basis:100%}.pair-name{font-size:10px}}
