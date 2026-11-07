@@ -28,10 +28,13 @@ function setStatus(){
  $('#cloudDescription').textContent=editing?'已登入：可以修改所有玩家的庫存。下次開啟會自動恢復登入（最多七天）。':viewing?'不用密碼也能看所有人的最新庫存；需要修改時才輸入共用密碼。':'雲端連線尚未成功，請確認設定與 flower-gateway。';
  $('#syncStamp').textContent=editing?'✏️ 可編輯':viewing?'☁ 公開唯讀':'尚未連線';
  $('#authBtn').textContent=editing?'登出／帳號設定':'登入以編輯';
- const editControls=['quickImport','savePlayers','addPlayer','parseText','parseSheet','scanImages','savePreview','addPreviewRow','csvFile'];
+ const editControls=['quickImport','savePlayers','addPlayer','parseText','parseSheet','savePreview','addPreviewRow','csvFile'];
  for(const id of editControls){const el=$('#'+id);if(el)el.disabled=!editing}
  $$('#playerNames input').forEach(el=>el.disabled=!editing);
  $('#newPlayerName').disabled=!editing;
+ // Keep the AI button clickable in read-only mode, so it can explain that login is required.
+ $('#scanImages').disabled=busy;
+ $('#scanImages').textContent=editing?'🤖 開始 AI 辨識（會計費）→':'🔒 登入後開始 AI 辨識 →';
  $('#signIn').hidden=editing;$('#signOut').hidden=!editing;
  $('#password').closest('.field').hidden=editing;
  $('#disconnectCloud').hidden=true;
@@ -76,13 +79,13 @@ async function prepareImage(file){
  }finally{URL.revokeObjectURL(url)}
 }
 async function scanScreenshots(){
- if(!requireEdit())return;
+ if(!canEdit()){toast('圖片已選擇，但需先「登入以編輯」才能呼叫付費 AI。登入後請再選擇圖片。',true);nav('settings');return;}
  if(busy)return;
  if(!fileSelection.length){toast('請先選擇截圖',true);return}
  if(fileSelection.length>3){toast('為控制費用與準確度，每批最多 3 張',true);return}
  const localAI = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
  if(!localAI && (!sb||!token)){toast('請先到設定頁輸入共用密碼並登入',true);nav('settings');return}
- if(!confirm(`即將透過 OpenAI API 辨識 ${fileSelection.length} 張截圖，會產生 API 費用。要繼續嗎？`))return;
+ if(!confirm(`即將透過 OpenAI API 辨識 ${fileSelection.length} 張截圖。新版每張會做「精華＋花名」及「花瓣灰字」兩次獨立辨識，API 費用會比舊版高。要繼續嗎？`))return;
  busy=true;$('#scanImages').disabled=true;
  try{
   $('#ocrProgress').textContent='正在準備圖片…';
@@ -173,7 +176,7 @@ async function setConfig(){
 }
 
 function setTab(next){activeTab=next;$$('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===next));$$('.tab-body').forEach(el=>el.classList.toggle('active',el.id===`tab-${next}`))}
-function bind(){ $$('.nav-item').forEach(el=>el.addEventListener('click',()=>nav(el.dataset.page)));$$('.tab').forEach(el=>el.addEventListener('click',()=>setTab(el.dataset.tab)));$('#quickImport').addEventListener('click',()=>nav('import'));$('#authBtn').addEventListener('click',()=>nav('settings'));$('#searchInput').addEventListener('input',renderTable);$('#colorFilter').addEventListener('change',renderTable);$('#playerFilter').addEventListener('change',renderTable);$('#parseText').addEventListener('click',()=>setPreview(parseText($('#textInput').value)));$('#parseSheet').addEventListener('click',()=>setPreview(parseSheet($('#sheetInput').value)));$('#imageInput').addEventListener('change',e=>{fileSelection=[...e.target.files];$('#imageFileList').textContent=fileSelection.length?`已選擇 ${fileSelection.length} 張：${fileSelection.map(f=>f.name).join('、')}`:'';});$('#scanImages').addEventListener('click',scanScreenshots);$('#addPreviewRow').addEventListener('click',()=>{preview.push({flower:'',petals:null,nectar:null,source:'手動新增'});renderPreview()});$('#savePreview').addEventListener('click',commitPreview);$('#editForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='save')return;e.preventDefault();await saveEdit();$('#editDialog').close()});$('#savePlayers').addEventListener('click',savePlayerNames);$('#addPlayer').addEventListener('click',addPlayer);$('#saveCloud').addEventListener('click',setConfig);$('#disconnectCloud').addEventListener('click',async()=>{await signOut()});$('#signIn').addEventListener('click',signIn);$('#signOut').addEventListener('click',signOut);$('#exportCsv').addEventListener('click',exportCsv);$('#csvFile').addEventListener('change',async e=>{if(e.target.files[0])await importCsv(e.target.files[0]);e.target.value=''});$('#reloadHistory').addEventListener('click',async()=>{if(sb)try{if(token)await fetchCloud();else await fetchPublic()}catch(e){toast(e.message,true)}renderHistory()})}
+function bind(){ $$('.nav-item').forEach(el=>el.addEventListener('click',()=>nav(el.dataset.page)));$$('.tab').forEach(el=>el.addEventListener('click',()=>setTab(el.dataset.tab)));$('#quickImport').addEventListener('click',()=>nav('import'));$('#authBtn').addEventListener('click',()=>nav('settings'));$('#searchInput').addEventListener('input',renderTable);$('#colorFilter').addEventListener('change',renderTable);$('#playerFilter').addEventListener('change',renderTable);$('#parseText').addEventListener('click',()=>setPreview(parseText($('#textInput').value)));$('#parseSheet').addEventListener('click',()=>setPreview(parseSheet($('#sheetInput').value)));$('#imageInput').addEventListener('change',e=>{fileSelection=[...e.target.files];$('#imageFileList').textContent=fileSelection.length?`✅ 已選擇 ${fileSelection.length} 張：${fileSelection.map(f=>f.name).join('、')}${fileSelection.length>3?' ⚠️ 每次最多 3 張，請重新選擇。':''}${!canEdit()?' ｜請先按右上角「登入以編輯」':''}`:'';});$('#scanImages').addEventListener('click',scanScreenshots);$('#addPreviewRow').addEventListener('click',()=>{preview.push({flower:'',petals:null,nectar:null,source:'手動新增'});renderPreview()});$('#savePreview').addEventListener('click',commitPreview);$('#editForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='save')return;e.preventDefault();await saveEdit();$('#editDialog').close()});$('#savePlayers').addEventListener('click',savePlayerNames);$('#addPlayer').addEventListener('click',addPlayer);$('#saveCloud').addEventListener('click',setConfig);$('#disconnectCloud').addEventListener('click',async()=>{await signOut()});$('#signIn').addEventListener('click',signIn);$('#signOut').addEventListener('click',signOut);$('#exportCsv').addEventListener('click',exportCsv);$('#csvFile').addEventListener('change',async e=>{if(e.target.files[0])await importCsv(e.target.files[0]);e.target.value=''});$('#reloadHistory').addEventListener('click',async()=>{if(sb)try{if(token)await fetchCloud();else await fetchPublic()}catch(e){toast(e.message,true)}renderHistory()})}
 async function init(){bind();renderPlayerSelects();renderTable();renderHistory();renderSettings();await connect()}
 window.addEventListener('load',init);
 })();
