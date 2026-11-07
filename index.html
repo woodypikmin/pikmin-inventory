@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f8f1" />
+  <meta name="description" content="四人共用的 Pikmin Bloom 花瓣與精華庫存紀錄" />
+  <title>花花補給站 · Pikmin Bloom 庫存</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-icon">✿</span><div><strong>花花補給站</strong><small>PIKMIN BLOOM INVENTORY</small></div></div>
+      <div class="side-caption">工作空間</div>
+      <nav aria-label="主要功能">
+        <button class="nav-item active" data-page="dashboard"><span>▦</span> 庫存總覽</button>
+        <button class="nav-item" data-page="import"><span>⇪</span> 批量更新</button>
+        <button class="nav-item" data-page="history"><span>◷</span> 更新紀錄</button>
+        <button class="nav-item" data-page="settings"><span>⚙</span> 設定與備份</button>
+      </nav>
+      <div class="side-bottom"><div class="status-dot-wrap"><i id="statusDot"></i><span id="modeLabel">本機體驗模式</span></div><small>✿ 花瓣慢慢種，庫存好好記</small></div>
+    </aside>
+    <div class="main-wrap">
+      <header class="topbar"><div><span class="eyebrow">TEAM FLOWER JOURNAL</span><div class="mobile-brand">✿ 花花補給站</div></div><div class="top-actions"><span id="syncStamp">尚未同步</span><button id="authBtn" class="btn btn-outline btn-small">☁ 雲端設定</button></div></header>
+      <main>
+        <section id="page-dashboard" class="page active">
+          <div class="hero"><div><div class="hero-badge">🌼 FOUR FRIENDS · ONE GARDEN</div><h1>今天也一起種花吧 <span>✿</span></h1><p>四個人的花瓣與精華，整理得清清楚楚。</p></div><div class="hero-art" aria-hidden="true"><span>🌷</span><span>🌼</span><span>🌸</span></div></div>
+          <div class="stats"><article class="stat"><div class="stat-icon green">✿</div><div><small>已登記花種</small><strong id="statFlowers">0</strong></div></article><article class="stat"><div class="stat-icon gold">♧</div><div><small>目前選取玩家</small><strong id="statPlayer">玩家1</strong></div></article><article class="stat"><div class="stat-icon pink">↻</div><div><small>最後更新</small><strong id="statUpdated">尚無資料</strong></div></article></div>
+          <div class="panel inventory-panel"><div class="panel-heading"><div><h2>🌸 花朵庫存</h2><p>按一下數量即可修改；「—」表示尚未登記，和 0 不同。</p></div><button id="quickImport" class="btn btn-primary">＋ 批量新增</button></div>
+            <div class="filters"><div class="search-wrap"><span>⌕</span><input id="searchInput" type="search" placeholder="搜尋花名，例如：彼岸、普白、玫瑰…" /></div><select id="colorFilter" aria-label="篩選顏色"><option value="all">全部顏色</option><option value="白">🤍 白色</option><option value="黃">💛 黃色</option><option value="紅">❤️ 紅色</option><option value="藍">💙 藍色</option></select><select id="playerFilter" aria-label="篩選玩家"><option value="all">👥 四人比較</option></select></div>
+            <div class="table-wrap"><table id="inventoryTable"><thead></thead><tbody></tbody></table><div id="emptyState" class="empty" hidden><div>🌱</div><h3>這裡還沒有花朵紀錄</h3><p>從「批量更新」貼上資料，或上傳遊戲截圖開始吧！</p></div></div><div class="table-foot"><span id="rowCount">顯示 0 種花朵</span><span>可直接點選數字編輯 · 每次修改都會儲存</span></div>
+          </div>
+        </section>
+        <section id="page-import" class="page"><div class="page-title"><span class="eyebrow">BULK UPDATE</span><h1>批量更新 <span>✿</span></h1><p>一口氣貼上文字、試算表，或從截圖辨識花瓣與精華。</p></div><div class="panel form-panel"><div class="field"><label for="importPlayer">這批資料屬於哪位玩家？</label><select id="importPlayer"></select></div><div class="tabs" role="tablist"><button class="tab active" data-tab="text">✎ 文字貼上</button><button class="tab" data-tab="sheet">▦ 試算表貼上</button><button class="tab" data-tab="image">▧ 截圖辨識 (實驗)</button></div>
+            <div id="tab-text" class="tab-body active"><div class="help">每行一朵，格式：<code>花名 花瓣 精華</code>。只更新一個欄位可在第一行寫 <code>花瓣</code> 或 <code>精華</code>。例如 <code>白彼岸花300</code>。</div><textarea id="textInput" spellcheck="false" placeholder="白色彼岸花 1200 942&#10;黃色彼岸花 1200 671&#10;紅色彼岸花 1172 1094&#10;精華 1200 1200"></textarea><button id="parseText" class="btn btn-primary">解析文字 →</button></div>
+            <div id="tab-sheet" class="tab-body"><div class="help">從 Excel / Google 試算表複製三欄後貼上：<code>花名[TAB]花瓣[TAB]精華</code>，可帶標題列；空格不會覆蓋舊資料。</div><textarea id="sheetInput" spellcheck="false" placeholder="花朵\t花瓣\t精華&#10;白色彼岸花\t1200\t942&#10;黃色彼岸花\t1200\t671"></textarea><button id="parseSheet" class="btn btn-primary">解析表格 →</button></div>
+            <div id="tab-image" class="tab-body"><div class="help important">📸 支援 iPhone / Android 多張截圖，嘗試讀取「上方灰字＝花瓣、右下黑字＝精華」。中文 OCR 可能會認錯，<b>務必在下方核對後才儲存</b>。辨識在你的瀏覽器執行，不會自動上傳截圖到資料庫；首次使用需下載語言模型。</div><label class="upload-zone" for="imageInput"><span>📷</span><strong>點這裡選取多張截圖</strong><small>支援 JPG、PNG、WEBP</small></label><input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden /><div id="imageFileList" class="file-list"></div><button id="scanImages" class="btn btn-primary">開始辨識圖片 →</button><p id="ocrProgress" class="processing" role="status"></p></div>
+          </div><div id="previewPanel" class="panel preview-panel" hidden><div class="panel-heading"><div><h2>📋 儲存前核對</h2><p>可直接修改名稱及數量；留白代表不更新該欄位。</p></div><div id="previewStats" class="count-pill"></div></div><div id="previewWarnings" class="warning-list"></div><div class="table-wrap"><table class="preview-table"><thead><tr><th>花朵名稱</th><th>🌸 花瓣</th><th>🍯 精華</th><th>來源 / 注意事項</th><th></th></tr></thead><tbody id="previewBody"></tbody></table></div><div class="preview-actions"><button id="addPreviewRow" class="btn btn-outline">＋ 增加一列</button><button id="savePreview" class="btn btn-primary">✓ 確認並儲存</button></div></div>
+        </section>
+        <section id="page-history" class="page"><div class="page-title"><span class="eyebrow">RECENT ACTIVITY</span><h1>更新紀錄 <span>✿</span></h1><p>看看哪些花朵最近被更新了。</p></div><div class="panel"><div class="panel-heading"><h2>最近 100 筆更新</h2><button class="btn btn-outline btn-small" id="reloadHistory">↻ 重新整理</button></div><div id="historyList" class="history-list"></div></div></section>
+        <section id="page-settings" class="page"><div class="page-title"><span class="eyebrow">PREFERENCES</span><h1>設定與備份 <span>✿</span></h1><p>管理玩家名稱、雲端連線與 CSV 備份。</p></div><div class="settings-grid"><div class="panel settings-card"><h2>👥 四位玩家</h2><p>名稱修改後，所有人的表格會一起更新。</p><div id="playerNames" class="name-fields"></div><button id="savePlayers" class="btn btn-primary">儲存玩家名稱</button></div><div class="panel settings-card"><h2>☁ 雲端共用</h2><p id="cloudDescription">現在是本機體驗模式：只存在這台裝置的瀏覽器，不會和其他人同步。</p><div class="field"><label for="sbUrl">Supabase Project URL</label><input id="sbUrl" placeholder="https://xxxxx.supabase.co" autocomplete="off"></div><div class="field"><label for="sbKey">Supabase Publishable / anon Key（公開金鑰）</label><input id="sbKey" placeholder="sb_publishable_... 或 eyJ..." autocomplete="off"></div><button id="saveCloud" class="btn btn-primary">儲存雲端設定並連線</button><button id="disconnectCloud" class="btn btn-outline">切回本機模式</button><div class="field auth-field"><label for="email">已授權成員 Email</label><input id="email" type="email" autocomplete="username" placeholder="name@example.com" /></div><div class="field"><label for="password">密碼</label><input id="password" type="password" autocomplete="current-password" /></div><div class="button-row"><button id="signIn" class="btn btn-primary">登入雲端</button><button id="signOut" class="btn btn-outline">登出</button></div><p class="tiny">請先依 README 建立資料表、加入四位 email 並建立帳號。<b>絕不可填 service_role / secret key。</b></p></div><div class="panel settings-card"><h2>📦 備份／還原</h2><p>CSV 可以留底，也可以用 Excel 開啟。還原前會先顯示預覽。</p><button id="exportCsv" class="btn btn-outline">↓ 下載庫存 CSV</button><label class="btn btn-outline file-btn">↑ 匯入 CSV<input id="csvFile" type="file" accept=".csv,text/csv" hidden /></label></div><div class="panel settings-card"><h2>🌸 特殊花名規則</h2><p>普通精華在表格和截圖辨識中都統一使用簡稱。</p><div class="alias-grid"><span>精華 → <b>普白</b></span><span>黃色精華 → <b>普黃</b></span><span>紅色精華 → <b>普紅</b></span><span>藍色精華 → <b>普藍</b></span></div><p class="tiny">同一朵花如果在不同截圖重複出現，會標示提醒，不會將數量加總。</p></div></div></section>
+      </main>
+      <footer>Made for four little flower keepers ♡ <span>非任天堂官方服務 · 資料由玩家自行管理</span></footer>
+    </div>
+  </div>
+  <dialog id="editDialog"><form method="dialog" id="editForm"><button class="dialog-close" value="cancel" aria-label="關閉">×</button><div class="eyebrow">QUICK EDIT</div><h2 id="editTitle">更新庫存</h2><p id="editSubtitle"></p><div class="field"><label for="editPetals">🌸 花瓣數量</label><input id="editPetals" type="number" min="0" max="9999999" step="1" placeholder="留白代表尚未登記" /></div><div class="field"><label for="editNectar">🍯 精華數量</label><input id="editNectar" type="number" min="0" max="9999999" step="1" placeholder="留白代表尚未登記" /></div><div class="button-row"><button class="btn btn-outline" value="cancel">取消</button><button id="editSave" class="btn btn-primary" value="save">儲存變更</button></div></form></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
