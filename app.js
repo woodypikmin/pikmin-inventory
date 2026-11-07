@@ -56,16 +56,23 @@ function readImage(file){return new Promise((resolve,reject)=>{const img=new Ima
 function fileAsDataUrl(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('無法開啟圖片'));reader.readAsDataURL(file)})}
 async function prepareImage(file){
  if(!/^image\/(png|jpeg|webp)$/.test(file.type))throw Error('圖片格式不支援：'+file.name);
+ // A jpeg already small enough is transmitted without any lossy recompression.
+ if(file.type==='image/jpeg' && file.size < 3_500_000) return await fileAsDataUrl(file);
  const url=URL.createObjectURL(file);
  try{
-  const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('圖片無法讀取'));i.src=url});
-  // Native resolution up to 2048px for readable small labels; JPEG reduces request size.
-  const ratio=Math.min(1,2048/Math.max(img.naturalWidth,img.naturalHeight));
-  const canvas=document.createElement('canvas');canvas.width=Math.round(img.naturalWidth*ratio);canvas.height=Math.round(img.naturalHeight*ratio);
-  canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-  const data=canvas.toDataURL('image/jpeg',0.88);
-  if(data.length>5_000_000)throw Error('圖片過大，請改用較小截圖');
-  return data;
+  const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(Error('圖片無法讀取'));i.src=url});
+  // Unlike the previous 2048px / quality .88 conversion, preserve native resolution
+  // as far as practical, particularly the tiny nectar labels.
+  for(const maxSide of [3600,3000,2600,2300,2048]){
+   const ratio=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+   const canvas=document.createElement('canvas');canvas.width=Math.round(img.naturalWidth*ratio);canvas.height=Math.round(img.naturalHeight*ratio);
+   canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+   for(const quality of [0.97,0.93,0.88]){
+    const data=canvas.toDataURL('image/jpeg',quality);
+    if(data.length<4_700_000)return data;
+   }
+  }
+  throw Error('圖片過大，請先裁掉不需要的畫面後再上傳');
  }finally{URL.revokeObjectURL(url)}
 }
 async function scanScreenshots(){
@@ -80,17 +87,30 @@ async function scanScreenshots(){
  try{
   $('#ocrProgress').textContent='正在準備圖片…';
   const images=[];for(let i=0;i<fileSelection.length;i++){images.push(await prepareImage(fileSelection[i]));}
-  $('#ocrProgress').textContent=`AI 正在辨識 ${images.length} 張圖片，請勿關閉頁面…`;
-  let data;
-  if(localAI){
-    const response=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({images:images.map(data=>({data}))})});
-    data=await response.json();
-    if(!response.ok)throw Error(data.error||'本機 AI 辨識失敗');
-    data.rows=(data.items||[]).map((it,index)=>({flower:it.name,petals:it.petals,nectar:it.nectar,image_index:1,name_status:it.name_status,original_name:it.original_name,suggestions:it.suggestions}));
-    data.warnings=[];
-  }else{
-    data=await gateway('scan',{images});
+  // Each screenshot is scanned separately. Three screenshots in a single model
+  // response can cause tile alignment mistakes and missed / mixed numbers.
+  const allRows=[], allWarnings=[];
+  for(let i=0;i<images.length;i++){
+   $('#ocrProgress').textContent=`AI 正在辨識第 ${i+1} / ${images.length} 張（逐張辨識）…`;
+   try{
+    let part;
+    if(localAI){
+     const response=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({images:[{data:images[i]}]})});
+     part=await response.json();
+     if(!response.ok)throw Error(part.error||'本機 AI 辨識失敗');
+     part.rows=(part.items||[]).map(it=>({flower:it.name,petals:it.petals,nectar:it.nectar,image_index:1,name_status:it.name_status,original_name:it.original_name,suggestions:it.suggestions}));
+     part.warnings=[];
+    }else{
+     part=await gateway('scan',{images:[images[i]]});
+    }
+    if(part?.error)throw Error(part.error);
+    allRows.push(...(part.rows||[]).map(row=>({...row,image_index:i+1})));
+    allWarnings.push(...(part.warnings||[]).map(w=>`第 ${i+1} 張：${w}`));
+   }catch(error){
+    allWarnings.push(`第 ${i+1} 張辨識失敗：${error.message}。`);
+   }
   }
+  const data={rows:allRows,warnings:allWarnings};
   if(data?.error)throw Error(data.error);
   const rows=[],warnings=[],seen=new Map();
   for(const item of data.rows||[]){
