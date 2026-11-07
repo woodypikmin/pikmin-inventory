@@ -78,6 +78,23 @@ async function prepareImage(file){
   throw Error('圖片過大，請先裁掉不需要的畫面後再上傳');
  }finally{URL.revokeObjectURL(url)}
 }
+// Add TWO overlapping, unscaled vertical crops so small gray petal labels and
+// lower-right nectar labels are visible in the vision request. Keep the whole
+// image for positioning. Crops are only reading aids, not extra inventory rows.
+async function makeReadingCrops(file){
+ const objectUrl=URL.createObjectURL(file);
+ try{
+  const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(Error('截圖無法讀取'));im.src=objectUrl});
+  const w=img.naturalWidth,h=img.naturalHeight;
+  const cuts=[[0.17,0.65],[0.57,1]];
+  return cuts.map(([start,end])=>{
+   const top=Math.floor(h*start),height=Math.ceil(h*end)-top;
+   const canvas=document.createElement('canvas');canvas.width=w;canvas.height=height;
+   canvas.getContext('2d').drawImage(img,0,top,w,height,0,0,w,height);
+   return canvas.toDataURL('image/jpeg',0.96);
+  });
+ }finally{URL.revokeObjectURL(objectUrl)}
+}
 async function scanScreenshots(){
  if(!canEdit()){toast('圖片已選擇，但需先「登入以編輯」才能呼叫付費 AI。登入後請再選擇圖片。',true);nav('settings');return;}
  if(busy)return;
@@ -85,11 +102,11 @@ async function scanScreenshots(){
  if(fileSelection.length>3){toast('為控制費用與準確度，每批最多 3 張',true);return}
  const localAI = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
  if(!localAI && (!sb||!token)){toast('請先到設定頁輸入共用密碼並登入',true);nav('settings');return}
- if(!confirm(`即將透過 OpenAI API 辨識 ${fileSelection.length} 張截圖。新版每張會做「精華＋花名」及「花瓣灰字」兩次獨立辨識，API 費用會比舊版高。要繼續嗎？`))return;
+ if(!confirm(`即將透過 OpenAI API 辨識 ${fileSelection.length} 張截圖。新版會附上原圖與局部放大圖進行辨識，必要時會再次核對數字，因此 API 費用可能比舊版高。要繼續嗎？`))return;
  busy=true;$('#scanImages').disabled=true;
  try{
   $('#ocrProgress').textContent='正在準備圖片…';
-  const images=[];for(let i=0;i<fileSelection.length;i++){images.push(await prepareImage(fileSelection[i]));}
+  const images=[],readingCrops=[];for(let i=0;i<fileSelection.length;i++){images.push(await prepareImage(fileSelection[i]));readingCrops.push(await makeReadingCrops(fileSelection[i]));}
   // Each screenshot is scanned separately. Three screenshots in a single model
   // response can cause tile alignment mistakes and missed / mixed numbers.
   const allRows=[], allWarnings=[];
@@ -104,7 +121,7 @@ async function scanScreenshots(){
      part.rows=(part.items||[]).map(it=>({flower:it.name,petals:it.petals,nectar:it.nectar,image_index:1,name_status:it.name_status,original_name:it.original_name,suggestions:it.suggestions}));
      part.warnings=[];
     }else{
-     part=await gateway('scan',{images:[images[i]]});
+     part=await gateway('scan',{images:[images[i]],reading_crops:readingCrops[i]});
     }
     if(part?.error)throw Error(part.error);
     allRows.push(...(part.rows||[]).map(row=>({...row,image_index:i+1})));
