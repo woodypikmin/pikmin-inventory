@@ -14,3 +14,39 @@
 
 /* V16: special heart and single-color flower symbols */
 .flower-color.flower-special-icon{width:18px;height:18px;font-style:normal;font-size:14px;line-height:18px;border:0;box-shadow:none;background:transparent;vertical-align:middle;text-align:center;margin-right:7px}
+
+/* V20: multi-player low-inventory comparison */
+.joint-panel{padding:22px 24px;margin-bottom:18px}
+.joint-panel .panel-heading{margin-bottom:8px}
+.joint-controls{display:grid;grid-template-columns:minmax(220px,2fr) minmax(135px,1fr) minmax(155px,1fr);gap:16px;align-items:end;margin:18px 0}
+.joint-controls>label{display:flex;flex-direction:column;gap:8px;font-size:12px;font-weight:800;color:#64806c}
+.joint-controls input,.joint-controls select{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px 10px;color:var(--ink);font-size:13px}
+.joint-player-field{padding:10px 12px 12px;border:1px solid var(--line);border-radius:10px;min-width:0}
+.joint-player-field legend{font-size:12px;font-weight:800;color:#64806c;padding:0 5px}
+.joint-player-options{display:flex;flex-wrap:wrap;gap:9px 16px}
+.joint-player-options label{display:inline-flex;gap:6px;align-items:center;font-size:13px;cursor:pointer;color:#385a41}
+.joint-player-options input{width:auto;accent-color:#37835c}
+.joint-results-wrap{overflow:auto;max-height:620px;border:1px solid #e5eee5;border-radius:12px}
+.joint-table{width:100%;border-collapse:collapse;font-size:13px;min-width:350px}
+.joint-table th,.joint-table td{padding:11px 13px;text-align:left;border-bottom:1px solid #edf2ec;white-space:nowrap}
+.joint-table thead th{position:sticky;top:0;background:#f1f8f1;color:#42634b;z-index:1}
+.joint-table tbody tr:nth-child(even){background:#fbfdfb}
+.joint-table td:not(:first-child){font-variant-numeric:tabular-nums;text-align:right}
+.joint-table th:not(:first-child){text-align:right}
+@media(max-width:780px){.joint-panel{padding:17px}.joint-controls{grid-template-columns:1fr 1fr;gap:12px}.joint-player-field{grid-column:1/-1}.joint-table{font-size:12px}}
+
+/* V21: auto group recommendations (read-only, no AI/API calls) */
+.recommend-panel .panel-heading{padding:0;margin-bottom:10px}
+.recommend-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:18px 0}
+.recommend-controls label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:800;color:#64806c}
+.recommend-controls select,.recommend-controls input{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px 10px;color:var(--ink);font-size:13px}
+.recommend-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-height:650px;overflow-y:auto}
+.recommend-item{border:1px solid #e5eee5;border-radius:12px;padding:15px;background:#fbfdfb;min-width:0}
+.recommend-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:11px}
+.recommend-flower{font-size:15px;color:#365641;overflow-wrap:anywhere}
+.recommend-badge{flex-shrink:0;font-size:11px;color:#32764e;background:#e6f4e9;border-radius:999px;padding:5px 9px;font-weight:800}
+.recommend-players{display:flex;flex-wrap:wrap;gap:7px}
+.recommend-person{display:inline-flex;align-items:center;gap:7px;background:white;border:1px solid #e4eee4;border-radius:9px;padding:7px 10px;font-size:12px;color:#45644b}
+.recommend-person b{font-weight:700}.recommend-footnote{display:block;color:#8aa092;font-size:11px;margin-top:12px}
+@media(max-width:1050px){.recommend-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:780px){.recommend-controls{grid-template-columns:1fr 1fr}.recommend-list{grid-template-columns:1fr}.recommend-panel .panel-heading{padding:0}.recommend-item{padding:12px}}

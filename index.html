@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#f7f8f1" />
   <meta name="description" content="多人共用的 Pikmin Bloom 花瓣與精華庫存紀錄" />
   <title>花朵庫存統計站 · Pikmin Bloom 庫存</title>
-  <link rel="stylesheet" href="style.css?v=19" />
+  <link rel="stylesheet" href="style.css?v=21" />
   
   
-  <script defer src="app.js?v=19"></script>
+  <script defer src="app.js?v=21"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -52,6 +52,31 @@
             <label>低庫存門檻（小於）<input id="analysisThreshold" type="number" min="0" max="9999999" step="1" value="100"></label>
             <label>比較花朵<select id="analysisFlower"></select></label>
           </div><p class="analytics-hint">低庫存與排名只計算已登記數量，<b>0 會算入統計</b>；「—」會另外列在尚未登記清單；相同數量會並列。門檻及篩選只儲存在你的瀏覽器。</p></div>
+          <section class="panel joint-panel" aria-labelledby="jointTitle">
+            <div class="panel-heading"><h2 id="jointTitle">🤝 聯合低庫存統計 <span id="jointCount" class="count-pill"></span></h2></div>
+            <p class="analytics-context">勾選 2 位以上玩家，找出<strong>每一位選中的玩家</strong>數量都低於門檻的花種，方便一起補種。未登記（—）不會被當作 0。</p>
+            <div class="joint-controls">
+              <fieldset class="joint-player-field"><legend>選擇一起統計的玩家（至少 2 位）</legend><div id="jointPlayerOptions" class="joint-player-options"></div></fieldset>
+              <label>比較項目<select id="jointKind"><option value="petals">🌸 花瓣</option><option value="nectar">🍯 精華</option></select></label>
+              <label>低於多少（不包含門檻值）<input id="jointThreshold" type="number" min="0" max="9999999" step="1" value="100" inputmode="numeric" /></label>
+            </div>
+            <p id="jointSummary" class="analytics-context" aria-live="polite"></p>
+            <div class="joint-results-wrap"><table class="joint-table"><thead id="jointHead"></thead><tbody id="jointBody"></tbody></table></div>
+            <p id="jointEmpty" class="analytics-empty" hidden></p>
+          </section>
+          <section class="panel joint-panel recommend-panel" aria-labelledby="recommendTitle">
+            <div class="panel-heading"><h2 id="recommendTitle">🌱 自動推薦一起補花 <span id="recommendCount" class="count-pill"></span></h2></div>
+            <p class="analytics-context">不用自己勾玩家！系統會從所有已登記的玩家中，找出同一種花庫存都偏低的 2～4 人組合，推薦一起補充。每種花只列出一組最佳人選，未登記（—）不視為 0。</p>
+            <div class="recommend-controls">
+              <label>統計種類<select id="recommendKind"><option value="petals">🌸 花瓣</option><option value="nectar">🍯 精華</option></select></label>
+              <label>低庫存門檻（小於）<input id="recommendThreshold" type="number" min="0" max="9999999" step="1" value="100" inputmode="numeric" /></label>
+              <label>推薦人數<select id="recommendGroupSize"><option value="auto">自動（優先 4 人）</option><option value="2">剛好 2 人</option><option value="3">剛好 3 人</option><option value="4">剛好 4 人</option></select></label>
+              <label>排序<select id="recommendSort"><option value="priority">先人數多，再看缺少程度</option><option value="scarcity">先看最缺的花</option></select></label>
+            </div>
+            <p id="recommendSummary" class="analytics-context" aria-live="polite"></p>
+            <div id="recommendList" class="recommend-list"></div>
+            <p id="recommendEmpty" class="analytics-empty" hidden></p>
+          </section>
           <div class="analytics-grid">
             <section class="panel analytics-card"><h2>⏱ 每位玩家最後更新時間</h2><div id="playerUpdatedList"></div></section>
             <section class="panel analytics-card"><h2>📉 低庫存清單 <span id="lowCount" class="count-pill"></span></h2><div id="lowStockList"></div></section>
