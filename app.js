@@ -199,7 +199,7 @@ function renderJointStatistics(){
  const chosen=[...jointSelectedPlayers].filter(id=>id>=0&&id<state.players.length).sort((a,b)=>a-b);
  const kind=$('#jointKind').value, label=kind==='petals'?'花瓣':'精華';
  const raw=Number($('#jointThreshold').value),threshold=Number.isFinite(raw)?Math.max(0,Math.floor(raw)):0;
- head.replaceChildren();body.replaceChildren();empty.hidden=true;
+ head.replaceChildren();body.replaceChildren();empty.hidden=true;const topFive=$('#jointTopFive');topFive.replaceChildren();
  if(chosen.length<2){count.textContent='0 種';summary.textContent='請至少勾選 2 位玩家。';empty.textContent='需要至少 2 位玩家才可以進行聯合比較。';empty.hidden=false;return;}
  const names=allNames().filter(f=>!(kind==='petals'&&f==='特殊精華'));
  const matching=names.map(f=>({flower:f,values:chosen.map(id=>validQuantity(getItem(id,f),kind))}))
@@ -207,69 +207,24 @@ function renderJointStatistics(){
    .sort((a,b)=>Math.max(...a.values)-Math.max(...b.values)||compareFlowers(a.flower,b.flower,'flower'));
  count.textContent=`${matching.length} 種`;
  summary.textContent=`${chosen.map(id=>getPlayerName(id)).join('、')} · ${label}皆 < ${nfmt(threshold)} · 找到 ${matching.length} 種（由各玩家中的最高數量由低到高排列）`;
- if(!matching.length){empty.textContent='沒有符合的花種。未登記（—）不列入結果；可提高門檻或更換玩家。';empty.hidden=false;return;}
+ if(!matching.length){empty.textContent='沒有符合的花種。未登記（—）不列入結果；可提高門檻或更換玩家。';empty.hidden=false;topFive.textContent='目前沒有符合的推薦。';return;}
+ // V22: both the full table and the top-five recommendations use the SAME selected players, type and threshold.
+ matching.slice(0,5).forEach((row,index)=>{
+  const card=document.createElement('article');card.className='joint-top-card';
+  const top=document.createElement('div');top.className='joint-top-card-head';
+  const rank=document.createElement('span');rank.className='joint-rank';rank.textContent=`#${index+1}`;
+  const flower=document.createElement('strong');flower.textContent=`${flowerDisplayIcon(row.flower)?flowerDisplayIcon(row.flower)+' ':''}${flowerDisplayName(row.flower)}`;
+  const max=document.createElement('span');max.className='joint-max';max.textContent=`最高 ${nfmt(Math.max(...row.values))}`;
+  top.append(rank,flower,max);
+  const amounts=document.createElement('div');amounts.className='joint-top-amounts';
+  chosen.forEach((id,i)=>{const pill=document.createElement('span');pill.textContent=`${getPlayerName(id)} ${nfmt(row.values[i])}`;amounts.append(pill)});
+  card.append(top,amounts);topFive.append(card);
+ });
  const tr=document.createElement('tr');['花朵',...chosen.map(id=>getPlayerName(id))].forEach(title=>{const th=document.createElement('th');th.textContent=title;tr.append(th)});head.append(tr);
  matching.forEach(row=>{const tr=document.createElement('tr'),td=document.createElement('td');td.textContent=flowerDisplayIcon(row.flower)?flowerDisplayIcon(row.flower)+' '+flowerDisplayName(row.flower):flowerDisplayName(row.flower);tr.append(td);row.values.forEach(value=>{const cell=document.createElement('td');cell.textContent=nfmt(value);tr.append(cell)});body.append(tr)});
 }
-/* V21: auto-recommend which 2–4 players should replenish each flower together.
-   One recommended group per flower, chosen by the lowest registered quantities.
-   This is a joint shortage recommendation, NOT a claim about who can supply nectar. */
-function calculateGroupRecommendations(kind, threshold, targetSize='auto', ordering='priority'){
- const maxGroup=targetSize==='auto'?4:Math.max(2,Math.min(4,Number(targetSize)||2));
- const result=[];
- for(const flower of allNames()){
-  if(kind==='petals'&&flower==='特殊精華')continue;
-  const eligible=state.players.map((_,id)=>({id,quantity:validQuantity(getItem(id,flower),kind)}))
-   .filter(row=>row.quantity!==null&&row.quantity<threshold)
-   .sort((a,b)=>a.quantity-b.quantity||a.id-b.id);
-  if(eligible.length<2)continue;
-  if(targetSize!=='auto'&&eligible.length<maxGroup)continue;
-  const group=eligible.slice(0,Math.min(maxGroup,eligible.length));
-  const quantities=group.map(row=>row.quantity);
-  result.push({flower,group,groupSize:group.length,max:Math.max(...quantities),total:quantities.reduce((a,b)=>a+b,0)});
- }
- result.sort((a,b)=>{
-  if(ordering==='scarcity')return a.max-b.max||b.groupSize-a.groupSize||a.total-b.total||compareFlowers(a.flower,b.flower,'flower');
-  return b.groupSize-a.groupSize||a.max-b.max||a.total-b.total||compareFlowers(a.flower,b.flower,'flower');
- });
- return result;
-}
-function renderGroupRecommendations(){
- const list=$('#recommendList'),summary=$('#recommendSummary'),count=$('#recommendCount'),empty=$('#recommendEmpty');
- if(!list)return;
- const kind=$('#recommendKind').value;
- const kindLabel=kind==='petals'?'花瓣':'精華';
- const raw=Number($('#recommendThreshold').value);
- const threshold=Number.isFinite(raw)?Math.max(0,Math.min(9999999,Math.floor(raw))):0;
- const size=$('#recommendGroupSize').value,ordering=$('#recommendSort').value;
- const matches=calculateGroupRecommendations(kind,threshold,size,ordering);
- list.replaceChildren();count.textContent=`${matches.length} 種`;
- const requested=size==='auto'?'自動選擇 2～4 位、優先人數較多':`每組剛好 ${size} 位`;
- summary.textContent=`從 ${state.players.length} 位玩家中推薦 · ${kindLabel} < ${nfmt(threshold)} · ${requested} · 找到 ${matches.length} 種`;
- empty.hidden=!!matches.length;
- if(!matches.length){empty.textContent='目前找不到符合條件的組合。可以提高門檻、降低人數，或等大家登記庫存後再試。';return;}
- // Show every matching flower, without requiring an AI request or edit access.
- for(const item of matches){
-  const card=document.createElement('article');card.className='recommend-item';
-  const top=document.createElement('div');top.className='recommend-top';
-  const name=document.createElement('strong');name.className='recommend-flower';
-  const icon=flowerDisplayIcon(item.flower);
-  name.textContent=`${icon?icon+' ':''}${flowerDisplayName(item.flower)}`;
-  const badge=document.createElement('span');badge.className='recommend-badge';badge.textContent=`${item.groupSize} 人一起補`;
-  top.append(name,badge);
-  const detail=document.createElement('div');detail.className='recommend-players';
-  for(const {id,quantity} of item.group){
-   const pill=document.createElement('span');pill.className='recommend-person';
-   const person=document.createElement('b');person.textContent=getPlayerName(id);
-   const amount=document.createElement('span');amount.textContent=`${kind==='petals'?'🌸':'🍯'} ${nfmt(quantity)}`;
-   pill.append(person,amount);detail.append(pill);
-  }
-  const note=document.createElement('small');note.className='recommend-footnote';note.textContent=`這組最高 ${nfmt(item.max)} · 數字越低越優先`;
-  card.append(top,detail,note);list.append(card);
- }
-}
 function renderAnalytics(){
- renderJointPlayers();renderJointStatistics();renderGroupRecommendations();analyticsSelections();const p=Number($('#analysisPlayer').value||0),kind=$('#analysisType').value,kindLabel=kind==='petals'?'花瓣':'精華';
+ renderJointPlayers();renderJointStatistics();analyticsSelections();const p=Number($('#analysisPlayer').value||0),kind=$('#analysisType').value,kindLabel=kind==='petals'?'花瓣':'精華';
  const limit=Math.max(0,Math.min(9999999,Math.floor(Number($('#analysisThreshold').value)||0)));
  const updateRoot=$('#playerUpdatedList');updateRoot.replaceChildren();
  state.players.forEach((name,id)=>{const items=Object.values(state.items).filter(x=>Number(x.player_id)===id);const dates=items.map(x=>x.updated_at).filter(Boolean).map(x=>Date.parse(x)).filter(Number.isFinite);const latest=dates.length?new Date(Math.max(...dates)).toISOString():null;updateRoot.append(makeRow(name,fmtFullTime(latest),`${items.length} 種已登記花朵`))});
@@ -408,7 +363,7 @@ async function setConfig(){
 }
 
 function setTab(next){activeTab=next;$$('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===next));$$('.tab-body').forEach(el=>el.classList.toggle('active',el.id===`tab-${next}`))}
-function bind(){ $$('.nav-item').forEach(el=>el.addEventListener('click',()=>nav(el.dataset.page)));$$('.tab').forEach(el=>el.addEventListener('click',()=>setTab(el.dataset.tab)));$('#quickImport').addEventListener('click',()=>nav('import'));$('#authBtn').addEventListener('click',()=>nav('settings'));$('#searchInput').addEventListener('input',renderTable);$('#colorFilter').addEventListener('change',renderTable);$('#sortMode').addEventListener('change',e=>{localStorage.setItem('flower-station-sort-mode',e.target.value);renderTable()});for(const id of ['analysisPlayer','analysisType','analysisThreshold','analysisFlower']){$('#'+id).addEventListener(id==='analysisThreshold'?'input':'change',renderAnalytics)}$('#playerFilter').addEventListener('change',renderTable);for(const id of ['jointKind','jointThreshold'])$('#'+id).addEventListener(id==='jointThreshold'?'input':'change',renderJointStatistics);for(const id of ['recommendKind','recommendThreshold','recommendGroupSize','recommendSort'])$('#'+id).addEventListener(id==='recommendThreshold'?'input':'change',renderGroupRecommendations);$('#parseText').addEventListener('click',()=>setPreview(parseText($('#textInput').value)));$('#parseSheet').addEventListener('click',()=>setPreview(parseSheet($('#sheetInput').value)));$('#imageInput').addEventListener('change',e=>{fileSelection=[...e.target.files];$('#imageFileList').textContent=fileSelection.length?`✅ 已選擇 ${fileSelection.length} 張：${fileSelection.map(f=>f.name).join('、')}${fileSelection.length>3?' ⚠️ 每次最多 3 張，請重新選擇。':''}${!canEdit()?' ｜請先按右上角「登入以編輯」':''}`:'';});$('#scanImages').addEventListener('click',scanScreenshots);$('#addPreviewRow').addEventListener('click',()=>{preview.push({flower:'',petals:null,nectar:null,source:'手動新增'});renderPreview()});$('#savePreview').addEventListener('click',commitPreview);$('#editForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='save')return;e.preventDefault();await saveEdit();$('#editDialog').close()});$('#deleteInventory').addEventListener('click',deleteFromSettings);$('#editDelete').addEventListener('click',deleteFromEdit);$('#savePlayers').addEventListener('click',savePlayerNames);$('#addPlayer').addEventListener('click',addPlayer);$('#saveCloud').addEventListener('click',setConfig);$('#disconnectCloud').addEventListener('click',async()=>{await signOut()});$('#signIn').addEventListener('click',signIn);$('#signOut').addEventListener('click',signOut);$('#exportCsv').addEventListener('click',exportCsv);$('#csvFile').addEventListener('change',async e=>{if(e.target.files[0])await importCsv(e.target.files[0]);e.target.value=''});$('#reloadHistory').addEventListener('click',async()=>{if(sb)try{if(token)await fetchCloud();else await fetchPublic()}catch(e){toast(e.message,true)}renderHistory()})}
+function bind(){ $$('.nav-item').forEach(el=>el.addEventListener('click',()=>nav(el.dataset.page)));$$('.tab').forEach(el=>el.addEventListener('click',()=>setTab(el.dataset.tab)));$('#quickImport').addEventListener('click',()=>nav('import'));$('#authBtn').addEventListener('click',()=>nav('settings'));$('#searchInput').addEventListener('input',renderTable);$('#colorFilter').addEventListener('change',renderTable);$('#sortMode').addEventListener('change',e=>{localStorage.setItem('flower-station-sort-mode',e.target.value);renderTable()});for(const id of ['analysisPlayer','analysisType','analysisThreshold','analysisFlower']){$('#'+id).addEventListener(id==='analysisThreshold'?'input':'change',renderAnalytics)}$('#playerFilter').addEventListener('change',renderTable);for(const id of ['jointKind','jointThreshold'])$('#'+id).addEventListener(id==='jointThreshold'?'input':'change',renderJointStatistics);$('#parseText').addEventListener('click',()=>setPreview(parseText($('#textInput').value)));$('#parseSheet').addEventListener('click',()=>setPreview(parseSheet($('#sheetInput').value)));$('#imageInput').addEventListener('change',e=>{fileSelection=[...e.target.files];$('#imageFileList').textContent=fileSelection.length?`✅ 已選擇 ${fileSelection.length} 張：${fileSelection.map(f=>f.name).join('、')}${fileSelection.length>3?' ⚠️ 每次最多 3 張，請重新選擇。':''}${!canEdit()?' ｜請先按右上角「登入以編輯」':''}`:'';});$('#scanImages').addEventListener('click',scanScreenshots);$('#addPreviewRow').addEventListener('click',()=>{preview.push({flower:'',petals:null,nectar:null,source:'手動新增'});renderPreview()});$('#savePreview').addEventListener('click',commitPreview);$('#editForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='save')return;e.preventDefault();await saveEdit();$('#editDialog').close()});$('#deleteInventory').addEventListener('click',deleteFromSettings);$('#editDelete').addEventListener('click',deleteFromEdit);$('#savePlayers').addEventListener('click',savePlayerNames);$('#addPlayer').addEventListener('click',addPlayer);$('#saveCloud').addEventListener('click',setConfig);$('#disconnectCloud').addEventListener('click',async()=>{await signOut()});$('#signIn').addEventListener('click',signIn);$('#signOut').addEventListener('click',signOut);$('#exportCsv').addEventListener('click',exportCsv);$('#csvFile').addEventListener('change',async e=>{if(e.target.files[0])await importCsv(e.target.files[0]);e.target.value=''});$('#reloadHistory').addEventListener('click',async()=>{if(sb)try{if(token)await fetchCloud();else await fetchPublic()}catch(e){toast(e.message,true)}renderHistory()})}
 async function init(){const savedSort=localStorage.getItem('flower-station-sort-mode');if(['flower','color','name'].includes(savedSort))$('#sortMode').value=savedSort;bind();renderPlayerSelects();renderTable();renderHistory();renderSettings();await connect();
  setInterval(()=>{if(!document.hidden&&sb&&!busy)reloadCloud(true)},45000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sb&&!busy)reloadCloud(true)});

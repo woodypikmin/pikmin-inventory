@@ -50,3 +50,17 @@
 .recommend-person b{font-weight:700}.recommend-footnote{display:block;color:#8aa092;font-size:11px;margin-top:12px}
 @media(max-width:1050px){.recommend-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:780px){.recommend-controls{grid-template-columns:1fr 1fr}.recommend-list{grid-template-columns:1fr}.recommend-panel .panel-heading{padding:0}.recommend-item{padding:12px}}
+
+/* V22: merge joint shortage & top five recommendations into a single panel */
+.joint-topfive{background:#f6faf5;border:1px solid #e1ece0;border-radius:13px;padding:16px;margin:18px 0}
+.joint-topfive h3,.joint-list-heading{font-size:15px;color:#355a42;margin:0 0 8px}
+.joint-topfive .analytics-context{margin:0 0 12px}
+.joint-topfive-list{display:grid;grid-template-columns:1fr;gap:8px}
+.joint-top-card{background:#fff;border:1px solid #e2eee2;border-radius:11px;padding:11px 13px}
+.joint-top-card-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.joint-top-card-head strong{font-size:14px;color:#355940}
+.joint-rank{font-size:12px;color:#fff;background:#5c9870;padding:3px 8px;border-radius:20px;font-weight:800}
+.joint-max{font-size:12px;color:#607d66;margin-left:auto}
+.joint-top-amounts{display:flex;gap:7px 13px;flex-wrap:wrap;color:#53735a;font-size:12px;margin-top:8px}
+.joint-list-heading{margin:18px 0 10px}
+@media(max-width:600px){.joint-topfive{padding:12px}.joint-max{margin-left:0}}
