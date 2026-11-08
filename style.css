@@ -64,3 +64,11 @@
 .joint-top-amounts{display:flex;gap:7px 13px;flex-wrap:wrap;color:#53735a;font-size:12px;margin-top:8px}
 .joint-list-heading{margin:18px 0 10px}
 @media(max-width:600px){.joint-topfive{padding:12px}.joint-max{margin-left:0}}
+
+/* V23 validation / quick-entry */
+#quickFamilies{display:block;width:100%;min-height:210px;border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff}
+#quickFamilies option{padding:7px 11px}
+#quickGridPanel{margin-top:20px}
+#quickGridPanel td input{min-width:125px;width:100%;padding:9px;border-radius:8px;border:1px solid #dae4da}
+.preview-table select.name-input{min-width:190px;width:100%;padding:9px;border:1px solid #dae4da;border-radius:8px;background:#fff}
+.suggestion-btn{display:block;text-align:left;border:1px solid #f0d8a5;background:#fff8e5;color:#8f621b;border-radius:7px;padding:6px 9px;margin-top:5px;font-size:11px;white-space:normal}
