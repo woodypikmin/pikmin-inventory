@@ -72,3 +72,8 @@
 #quickGridPanel td input{min-width:125px;width:100%;padding:9px;border-radius:8px;border:1px solid #dae4da}
 .preview-table select.name-input{min-width:190px;width:100%;padding:9px;border:1px solid #dae4da;border-radius:8px;background:#fff}
 .suggestion-btn{display:block;text-align:left;border:1px solid #f0d8a5;background:#fff8e5;color:#8f621b;border-radius:7px;padding:6px 9px;margin-top:5px;font-size:11px;white-space:normal}
+
+/* V24: all flower markers have the same visual footprint.
+   Use the existing CSS color dot for single-color flowers instead of OS-dependent emojis. */
+.flower-color{box-sizing:border-box;width:12px;height:12px;min-width:12px;min-height:12px;margin-right:9px;vertical-align:middle}
+.flower-color.flower-special-icon{box-sizing:border-box;display:inline-flex;width:12px;height:12px;min-width:12px;min-height:12px;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-size:14px;line-height:1;font-weight:bold;color:#e35f77;background:none;border:0;box-shadow:none;margin-right:9px;vertical-align:middle}
