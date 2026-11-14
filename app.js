@@ -217,6 +217,9 @@ function renderJointStatistics(){
  if(!summary)return;
  const chosen=[...jointSelectedPlayers].filter(id=>id>=0&&id<state.players.length).sort((a,b)=>a-b);
  const kind=$('#jointKind').value, label=kind==='petals'?'花瓣':'精華', color=$('#jointColor').value;
+ // 統一在推薦與完整清單標題顯示目前選取的比較類型。
+ $('#jointTopTitle').textContent=`🌱 一起補花優先推薦 · 前 5 名（${label}）`;
+ $('#jointListTitle').textContent=`📋 聯合低庫存完整清單（${label}）`;
  const raw=Number($('#jointThreshold').value),threshold=Number.isFinite(raw)?Math.max(0,Math.floor(raw)):0;
  head.replaceChildren();body.replaceChildren();empty.hidden=true;const topFive=$('#jointTopFive');topFive.replaceChildren();
  if(chosen.length<2){count.textContent='0 種';summary.textContent='請至少勾選 2 位玩家。';empty.textContent='需要至少 2 位玩家才可以進行聯合比較。';empty.hidden=false;return;}

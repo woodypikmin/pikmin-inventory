@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#f7f8f1" />
   <meta name="description" content="多人共用的 Pikmin Bloom 花瓣與精華庫存紀錄" />
   <title>花朵庫存統計站 · Pikmin Bloom 庫存</title>
-  <link rel="stylesheet" href="style.css?v=26" />
+  <link rel="stylesheet" href="style.css?v=28" />
   
   
-  <script defer src="app.js?v=26"></script>
+  <script defer src="app.js?v=28"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -63,11 +63,11 @@
             </div>
             <p id="jointSummary" class="analytics-context" aria-live="polite"></p>
             <div class="joint-topfive" aria-labelledby="jointTopTitle">
-              <h3 id="jointTopTitle">🌱 一起補花優先推薦 · 前 5 名</h3>
+              <h3 id="jointTopTitle">🌱 一起補花優先推薦 · 前 5 名（花瓣）</h3>
               <p class="analytics-context">從下方符合條件的花朵中選出，優先顯示「選取玩家裡最高庫存仍然很低」的花朵。</p>
               <div id="jointTopFive" class="joint-topfive-list"></div>
             </div>
-            <h3 class="joint-list-heading">📋 聯合低庫存完整清單</h3>
+            <h3 id="jointListTitle" class="joint-list-heading">📋 聯合低庫存完整清單（花瓣）</h3>
             <div class="joint-results-wrap"><table class="joint-table"><thead id="jointHead"></thead><tbody id="jointBody"></tbody></table></div>
             <p id="jointEmpty" class="analytics-empty" hidden></p>
           </section>
