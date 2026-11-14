@@ -188,10 +188,12 @@ function validQuantity(item,kind){const value=item?.[kind];return value===null||
 function fmtFullTime(value){if(!value)return '尚未更新';const dt=new Date(value);return Number.isNaN(dt.getTime())?'時間未知':dt.toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
 function makeEmpty(message){const p=document.createElement('p');p.className='analytics-empty';p.textContent=message;return p}
 function makeRow(label,value,extra=''){label=flowerDisplayName(label);const row=document.createElement('div');row.className='analytics-row';const text=document.createElement('span');text.textContent=label;const val=document.createElement('strong');val.textContent=value;row.append(text,val);if(extra){const small=document.createElement('small');small.textContent=extra;row.append(small)}return row}
+function isInAnalysisColor(flower,color){return color==='all'||colorOf(flower)===color}
+function analysisColorLabel(color){return ({'all':'全部顏色','白':'白色','黃':'黃色','紅':'紅色','藍':'藍色'})[color]||'全部顏色'}
 function analyticsSelections(){
  const ps=$('#analysisPlayer'),fs=$('#analysisFlower');const pOld=ps.value,fOld=fs.value;
  ps.replaceChildren();state.players.forEach((name,i)=>ps.add(new Option(name,String(i))));
- const flowers=allNames();fs.replaceChildren();flowers.forEach(name=>fs.add(new Option(flowerDisplayName(name),name)));
+ const flowers=allNames().filter(name=>isInAnalysisColor(name,$('#analysisColor').value));fs.replaceChildren();flowers.forEach(name=>fs.add(new Option(flowerDisplayName(name),name)));
  ps.value=pOld&&Number(pOld)<state.players.length?pOld:'0';fs.value=flowers.includes(fOld)?fOld:(flowers[0]||'');
 }
 /* V20 联合低庫存：all selected players must have a registered value below threshold. */
@@ -214,16 +216,16 @@ function renderJointStatistics(){
  const summary=$('#jointSummary'),count=$('#jointCount'),empty=$('#jointEmpty'),head=$('#jointHead'),body=$('#jointBody');
  if(!summary)return;
  const chosen=[...jointSelectedPlayers].filter(id=>id>=0&&id<state.players.length).sort((a,b)=>a-b);
- const kind=$('#jointKind').value, label=kind==='petals'?'花瓣':'精華';
+ const kind=$('#jointKind').value, label=kind==='petals'?'花瓣':'精華', color=$('#jointColor').value;
  const raw=Number($('#jointThreshold').value),threshold=Number.isFinite(raw)?Math.max(0,Math.floor(raw)):0;
  head.replaceChildren();body.replaceChildren();empty.hidden=true;const topFive=$('#jointTopFive');topFive.replaceChildren();
  if(chosen.length<2){count.textContent='0 種';summary.textContent='請至少勾選 2 位玩家。';empty.textContent='需要至少 2 位玩家才可以進行聯合比較。';empty.hidden=false;return;}
- const names=allNames().filter(f=>!(kind==='petals'&&f==='特殊精華'));
+ const names=allNames().filter(f=>isInAnalysisColor(f,color)&&!(kind==='petals'&&f==='特殊精華'));
  const matching=names.map(f=>({flower:f,values:chosen.map(id=>validQuantity(getItem(id,f),kind))}))
    .filter(row=>row.values.every(v=>v!==null&&v<threshold))
    .sort((a,b)=>Math.max(...a.values)-Math.max(...b.values)||compareFlowers(a.flower,b.flower,'flower'));
  count.textContent=`${matching.length} 種`;
- summary.textContent=`${chosen.map(id=>getPlayerName(id)).join('、')} · ${label}皆 < ${nfmt(threshold)} · 找到 ${matching.length} 種（由各玩家中的最高數量由低到高排列）`;
+ summary.textContent=`${chosen.map(id=>getPlayerName(id)).join('、')} · ${analysisColorLabel(color)} · ${label}皆 < ${nfmt(threshold)} · 找到 ${matching.length} 種（由各玩家中的最高數量由低到高排列）`;
  if(!matching.length){empty.textContent='沒有符合的花種。未登記（—）不列入結果；可提高門檻或更換玩家。';empty.hidden=false;topFive.textContent='目前沒有符合的推薦。';return;}
  // V22: both the full table and the top-five recommendations use the SAME selected players, type and threshold.
  matching.slice(0,5).forEach((row,index)=>{
@@ -241,13 +243,13 @@ function renderJointStatistics(){
  matching.forEach(row=>{const tr=document.createElement('tr'),td=document.createElement('td');td.textContent=flowerDisplayIcon(row.flower)?flowerDisplayIcon(row.flower)+' '+flowerDisplayName(row.flower):flowerDisplayName(row.flower);tr.append(td);row.values.forEach(value=>{const cell=document.createElement('td');cell.textContent=nfmt(value);tr.append(cell)});body.append(tr)});
 }
 function renderAnalytics(){
- renderJointPlayers();renderJointStatistics();analyticsSelections();const p=Number($('#analysisPlayer').value||0),kind=$('#analysisType').value,kindLabel=kind==='petals'?'花瓣':'精華';
+ renderJointPlayers();renderJointStatistics();analyticsSelections();const p=Number($('#analysisPlayer').value||0),kind=$('#analysisType').value,kindLabel=kind==='petals'?'花瓣':'精華',color=$('#analysisColor').value,colorLabel=analysisColorLabel(color);
  const limit=Math.max(0,Math.min(9999999,Math.floor(Number($('#analysisThreshold').value)||0)));
  const updateRoot=$('#playerUpdatedList');updateRoot.replaceChildren();
  state.players.forEach((name,id)=>{const items=Object.values(state.items).filter(x=>Number(x.player_id)===id);const dates=items.map(x=>x.updated_at).filter(Boolean).map(x=>Date.parse(x)).filter(Number.isFinite);const latest=dates.length?new Date(Math.max(...dates)).toISOString():null;updateRoot.append(makeRow(name,fmtFullTime(latest),`${items.length} 種已登記花朵`))});
  // 依目前總覽已有的花種，列出本玩家未登記的欄位；0 是已登記。
  const missing=[];
- for(const flowerName of allNames()){
+ for(const flowerName of allNames().filter(name=>isInAnalysisColor(name,color))){
   const record=getItem(p,flowerName);
   const gaps=[];
   if(flowerName!=='特殊精華'&&validQuantity(record,'petals')===null)gaps.push('🌸 花瓣');
@@ -259,21 +261,21 @@ function renderAnalytics(){
  if(!missing.length)missingRoot.append(makeEmpty('目前總覽中的花種都已登記完成。'));
  else{
   const info=document.createElement('p');info.className='analytics-context';
-  info.textContent=`${getPlayerName(p)} · ${missing.length} 種花朵有尚未登記的欄位`;
+  info.textContent=`${getPlayerName(p)} · ${colorLabel} · ${missing.length} 種花朵有尚未登記的欄位`;
   missingRoot.append(info);
   missing.forEach(x=>missingRoot.append(makeRow(x.flower,x.gaps.join('、'))));
  }
- const entries=Object.values(state.items).filter(x=>Number(x.player_id)===p).map(x=>({...x,amount:validQuantity(x,kind)})).filter(x=>x.amount!==null);
+ const entries=Object.values(state.items).filter(x=>Number(x.player_id)===p&&isInAnalysisColor(x.flower,color)&&!(kind==='petals'&&x.flower==='特殊精華')).map(x=>({...x,amount:validQuantity(x,kind)})).filter(x=>x.amount!==null);
  const low=entries.filter(x=>x.amount<limit).sort((a,b)=>a.amount-b.amount||compareFlowers(a.flower,b.flower));
  $('#lowCount').textContent=`${low.length} 種`;
  const lowRoot=$('#lowStockList');lowRoot.replaceChildren();
  if(!low.length)lowRoot.append(makeEmpty(`${getPlayerName(p)}目前沒有已登記且${kindLabel}少於 ${nfmt(limit)} 的花朵。`));
- else{const descr=document.createElement('p');descr.className='analytics-context';descr.textContent=`${getPlayerName(p)} · ${kindLabel} < ${nfmt(limit)}（由少到多）`;lowRoot.append(descr);low.forEach(x=>lowRoot.append(makeRow(x.flower,nfmt(x.amount))))}
+ else{const descr=document.createElement('p');descr.className='analytics-context';descr.textContent=`${getPlayerName(p)} · ${colorLabel} · ${kindLabel} < ${nfmt(limit)}（由少到多）`;lowRoot.append(descr);low.forEach(x=>lowRoot.append(makeRow(x.flower,nfmt(x.amount))))}
  const extremeRoot=$('#playerExtremes');extremeRoot.replaceChildren();
  if(!entries.length)extremeRoot.append(makeEmpty(`${getPlayerName(p)}尚未登記任何${kindLabel}數量。`));
  else{
   const min=Math.min(...entries.map(x=>x.amount)),max=Math.max(...entries.map(x=>x.amount));
-  const head=document.createElement('p');head.className='analytics-context';head.textContent=`${getPlayerName(p)} · ${kindLabel}（已登記 ${entries.length} 種）`;extremeRoot.append(head);
+  const head=document.createElement('p');head.className='analytics-context';head.textContent=`${getPlayerName(p)} · ${colorLabel} · ${kindLabel}（已登記 ${entries.length} 種）`;extremeRoot.append(head);
   for(const [title,v] of [['📉 最少',min],['📈 最多',max]]){const sub=document.createElement('h3');sub.className='analytics-subhead';sub.textContent=`${title}：${nfmt(v)}`;extremeRoot.append(sub);entries.filter(x=>x.amount===v).sort((a,b)=>compareFlowers(a.flower,b.flower)).forEach(x=>extremeRoot.append(makeRow(x.flower,nfmt(x.amount))))}
  }
  const flower=$('#analysisFlower').value,cmpRoot=$('#flowerCompare');cmpRoot.replaceChildren();
@@ -380,7 +382,7 @@ async function setConfig(){
 }
 
 function setTab(next){activeTab=next;$$('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===next));$$('.tab-body').forEach(el=>el.classList.toggle('active',el.id===`tab-${next}`))}
-function bind(){ $$('.nav-item').forEach(el=>el.addEventListener('click',()=>nav(el.dataset.page)));$$('.tab').forEach(el=>el.addEventListener('click',()=>setTab(el.dataset.tab)));$('#quickImport').addEventListener('click',()=>nav('import'));$('#authBtn').addEventListener('click',()=>nav('settings'));$('#searchInput').addEventListener('input',renderTable);$('#colorFilter').addEventListener('change',renderTable);$('#sortMode').addEventListener('change',e=>{localStorage.setItem('flower-station-sort-mode',e.target.value);renderTable()});for(const id of ['analysisPlayer','analysisType','analysisThreshold','analysisFlower']){$('#'+id).addEventListener(id==='analysisThreshold'?'input':'change',renderAnalytics)}$('#playerFilter').addEventListener('change',renderTable);for(const id of ['jointKind','jointThreshold'])$('#'+id).addEventListener(id==='jointThreshold'?'input':'change',renderJointStatistics);$('#generateQuick').addEventListener('click',generateQuickRows);$('#quickPreview').addEventListener('click',quickToPreview);$('#quickFamilySelect').addEventListener('change',e=>{for(const o of $('#quickFamilies').options)o.selected=o.value===e.target.value});$('#parseText').addEventListener('click',()=>setPreview(parseText($('#textInput').value)));$('#parseSheet').addEventListener('click',()=>setPreview(parseSheet($('#sheetInput').value)));$('#imageInput').addEventListener('change',e=>{fileSelection=[...e.target.files];$('#imageFileList').textContent=fileSelection.length?`✅ 已選擇 ${fileSelection.length} 張：${fileSelection.map(f=>f.name).join('、')}${fileSelection.length>3?' ⚠️ 每次最多 3 張，請重新選擇。':''}${!canEdit()?' ｜請先按右上角「登入以編輯」':''}`:'';});$('#scanImages').addEventListener('click',scanScreenshots);$('#addPreviewRow').addEventListener('click',()=>{preview.push({flower:'',petals:null,nectar:null,source:'手動新增'});renderPreview()});$('#savePreview').addEventListener('click',commitPreview);$('#editForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='save')return;e.preventDefault();await saveEdit();$('#editDialog').close()});$('#deleteInventory').addEventListener('click',deleteFromSettings);$('#editDelete').addEventListener('click',deleteFromEdit);$('#savePlayers').addEventListener('click',savePlayerNames);$('#addPlayer').addEventListener('click',addPlayer);$('#saveCloud').addEventListener('click',setConfig);$('#disconnectCloud').addEventListener('click',async()=>{await signOut()});$('#signIn').addEventListener('click',signIn);$('#signOut').addEventListener('click',signOut);$('#exportCsv').addEventListener('click',exportCsv);$('#csvFile').addEventListener('change',async e=>{if(e.target.files[0])await importCsv(e.target.files[0]);e.target.value=''});$('#reloadHistory').addEventListener('click',async()=>{if(sb)try{if(token)await fetchCloud();else await fetchPublic()}catch(e){toast(e.message,true)}renderHistory()})}
+function bind(){ for(const id of ['analysisColor','jointColor']){const stored=localStorage.getItem('flower-station-'+id);if(['all','白','黃','紅','藍'].includes(stored))$('#'+id).value=stored;$('#'+id).addEventListener('change',e=>localStorage.setItem('flower-station-'+id,e.target.value))} $$('.nav-item').forEach(el=>el.addEventListener('click',()=>nav(el.dataset.page)));$$('.tab').forEach(el=>el.addEventListener('click',()=>setTab(el.dataset.tab)));$('#quickImport').addEventListener('click',()=>nav('import'));$('#authBtn').addEventListener('click',()=>nav('settings'));$('#searchInput').addEventListener('input',renderTable);$('#colorFilter').addEventListener('change',renderTable);$('#sortMode').addEventListener('change',e=>{localStorage.setItem('flower-station-sort-mode',e.target.value);renderTable()});for(const id of ['analysisPlayer','analysisType','analysisThreshold','analysisColor','analysisFlower']){$('#'+id).addEventListener(id==='analysisThreshold'?'input':'change',renderAnalytics)}$('#playerFilter').addEventListener('change',renderTable);for(const id of ['jointKind','jointColor','jointThreshold'])$('#'+id).addEventListener(id==='jointThreshold'?'input':'change',renderJointStatistics);$('#generateQuick').addEventListener('click',generateQuickRows);$('#quickPreview').addEventListener('click',quickToPreview);$('#quickFamilySelect').addEventListener('change',e=>{for(const o of $('#quickFamilies').options)o.selected=o.value===e.target.value});$('#parseText').addEventListener('click',()=>setPreview(parseText($('#textInput').value)));$('#parseSheet').addEventListener('click',()=>setPreview(parseSheet($('#sheetInput').value)));$('#imageInput').addEventListener('change',e=>{fileSelection=[...e.target.files];$('#imageFileList').textContent=fileSelection.length?`✅ 已選擇 ${fileSelection.length} 張：${fileSelection.map(f=>f.name).join('、')}${fileSelection.length>3?' ⚠️ 每次最多 3 張，請重新選擇。':''}${!canEdit()?' ｜請先按右上角「登入以編輯」':''}`:'';});$('#scanImages').addEventListener('click',scanScreenshots);$('#addPreviewRow').addEventListener('click',()=>{preview.push({flower:'',petals:null,nectar:null,source:'手動新增'});renderPreview()});$('#savePreview').addEventListener('click',commitPreview);$('#editForm').addEventListener('submit',async e=>{if(e.submitter?.value!=='save')return;e.preventDefault();await saveEdit();$('#editDialog').close()});$('#deleteInventory').addEventListener('click',deleteFromSettings);$('#editDelete').addEventListener('click',deleteFromEdit);$('#savePlayers').addEventListener('click',savePlayerNames);$('#addPlayer').addEventListener('click',addPlayer);$('#saveCloud').addEventListener('click',setConfig);$('#disconnectCloud').addEventListener('click',async()=>{await signOut()});$('#signIn').addEventListener('click',signIn);$('#signOut').addEventListener('click',signOut);$('#exportCsv').addEventListener('click',exportCsv);$('#csvFile').addEventListener('change',async e=>{if(e.target.files[0])await importCsv(e.target.files[0]);e.target.value=''});$('#reloadHistory').addEventListener('click',async()=>{if(sb)try{if(token)await fetchCloud();else await fetchPublic()}catch(e){toast(e.message,true)}renderHistory()})}
 async function init(){const savedSort=localStorage.getItem('flower-station-sort-mode');if(['flower','color','name'].includes(savedSort))$('#sortMode').value=savedSort;bind();renderQuickCatalog();renderPlayerSelects();renderTable();renderHistory();renderSettings();await connect();
  setInterval(()=>{if(!document.hidden&&sb&&!busy)reloadCloud(true)},45000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sb&&!busy)reloadCloud(true)});

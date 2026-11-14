@@ -77,3 +77,10 @@
    Use the existing CSS color dot for single-color flowers instead of OS-dependent emojis. */
 .flower-color{box-sizing:border-box;width:12px;height:12px;min-width:12px;min-height:12px;margin-right:9px;vertical-align:middle}
 .flower-color.flower-special-icon{box-sizing:border-box;display:inline-flex;width:12px;height:12px;min-width:12px;min-height:12px;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-size:14px;line-height:1;font-weight:bold;color:#e35f77;background:none;border:0;box-shadow:none;margin-right:9px;vertical-align:middle}
+
+/* V26: color filters in both personal and joint analytics */
+.analytics-controls-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.joint-controls{grid-template-columns:minmax(200px,2fr) repeat(3,minmax(130px,1fr))}
+@media(max-width:1200px){.analytics-controls-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.joint-controls{grid-template-columns:repeat(3,minmax(0,1fr))}.joint-player-field{grid-column:1/-1}}
+@media(max-width:780px){.analytics-controls-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.joint-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.joint-player-field{grid-column:1/-1}}
+@media(max-width:420px){.joint-controls{grid-template-columns:1fr}.joint-player-field{grid-column:auto}}
